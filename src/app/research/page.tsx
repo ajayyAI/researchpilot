@@ -113,30 +113,33 @@ export default function ResearchPage() {
     state === "generating-report" ? "Generating Report..." : "Researching...";
 
   return (
-    <main className="min-h-screen bg-bg-primary">
-      <section className="section">
-        <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto mb-8">
-            <Button variant="ghost" size="sm" asChild className="mb-6 -ml-4">
+    <main className="min-h-screen">
+      <section className="section py-12 md:py-16">
+        <div className="container-width">
+          <div className="max-w-4xl mx-auto mb-10">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="mb-8 hover:bg-white/5 text-text-secondary hover:text-white -ml-4"
+            >
               <Link href="/">
                 <ArrowLeft className="size-4 mr-2" />
                 Back to Home
               </Link>
             </Button>
 
-            <div className="mb-12">
-              <h1 className="text-h2 font-semibold mb-4">
-                <span className="text-gradient-primary">
-                  New Research Session
-                </span>
+            <div className="mb-12 text-center md:text-left">
+              <h1 className="text-4xl md:text-5xl font-medium tracking-tight text-white mb-6">
+                New Research Session
               </h1>
-              <p className="text-body-lg text-text-secondary leading-relaxed">
+              <p className="text-xl text-text-secondary leading-relaxed max-w-2xl">
                 Configure your research parameters below. The AI will
                 recursively explore the topic to find deep insights.
               </p>
             </div>
 
-            <div className="max-w-2xl mx-auto space-y-8">
+            <div className="space-y-12">
               <ResearchForm
                 query={query}
                 onQueryChange={setQuery}
@@ -157,14 +160,14 @@ export default function ResearchPage() {
               )}
 
               {error && (
-                <div className="card border border-red-200 bg-red-50">
+                <div className="card rounded-2xl border border-red-500/20 bg-red-500/10 p-6">
                   <div className="flex items-start gap-4">
-                    <AlertCircle className="size-5 text-red-600 shrink-0 mt-0.5" />
+                    <AlertCircle className="size-5 text-red-400 shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="text-body font-semibold text-red-900 mb-1">
-                        Error
+                      <h3 className="text-sm font-semibold text-red-200 mb-1">
+                        Error Occurred
                       </h3>
-                      <p className="text-body-sm text-red-700">{error}</p>
+                      <p className="text-sm text-red-300/80">{error}</p>
                     </div>
                   </div>
                 </div>

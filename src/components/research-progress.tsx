@@ -2,7 +2,7 @@
 
 import { Progress } from "@/components/ui/progress";
 import type { ResearchProgress as ResearchProgressType } from "@/lib/research";
-import { Layers, Search, Zap } from "lucide-react";
+import { Loader2, Terminal } from "lucide-react";
 
 interface ResearchProgressProps {
   progress: ResearchProgressType;
@@ -18,70 +18,74 @@ export function ResearchProgress({
       ? Math.round((progress.completedQueries / progress.totalQueries) * 100)
       : 0;
 
-  const currentLevel = progress.totalDepth - progress.currentDepth + 1;
-
   return (
-    <div className="card space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-h5 font-semibold text-text-primary">
-          {isGeneratingReport ? "Generating Report" : "Research Progress"}
-        </h3>
-        <span className="text-body-sm font-semibold text-text-primary tabular-nums">
-          {progressPercent}%
-        </span>
-      </div>
-
-      <Progress value={progressPercent} className="h-2" />
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-bg-primary">
-          <div className="p-2 rounded-lg bg-bg-secondary">
-            <Layers className="size-4 text-text-muted" />
-          </div>
-          <div>
-            <p className="text-caption text-text-muted">Depth Level</p>
-            <p className="text-body-sm font-semibold text-text-primary">
-              {currentLevel} of {progress.totalDepth}
-            </p>
-          </div>
+    <div className="glass-card rounded-3xl border border-white/10 overflow-hidden">
+      <div className="bg-white/5 border-b border-white/5 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Terminal className="size-5 text-electric-blue" />
+          <h3 className="text-sm font-medium text-white">Research Agent</h3>
         </div>
-
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-bg-primary">
-          <div className="p-2 rounded-lg bg-bg-secondary">
-            <Zap className="size-4 text-text-muted" />
-          </div>
-          <div>
-            <p className="text-caption text-text-muted">Queries</p>
-            <p className="text-body-sm font-semibold text-text-primary">
-              {progress.completedQueries} of {progress.totalQueries}
-            </p>
-          </div>
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-text-secondary font-mono">
+            {progress.completedQueries} / {progress.totalQueries} Queries
+          </span>
+          <span className="text-sm font-mono text-electric-blue font-bold">
+            {progressPercent}%
+          </span>
         </div>
       </div>
 
-      {progress.currentQuery && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-caption text-text-muted">
-            <Search className="size-3.5" />
-            <span>Current Query</span>
-          </div>
-          <p className="text-body-sm text-text-secondary line-clamp-2">
-            {progress.currentQuery}
-          </p>
-        </div>
-      )}
+      <div className="p-6 space-y-6">
+        <Progress value={progressPercent} className="h-1 bg-white/10" />
 
-      {progress.status && (
-        <div className="flex items-center gap-2">
-          <span className="relative flex size-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-heavy-metal opacity-40" />
-            <span className="relative inline-flex rounded-full size-2 bg-heavy-metal" />
-          </span>
-          <span className="text-body-sm text-text-muted">
-            {progress.status}
-          </span>
+        <div className="bg-black/40 rounded-xl p-4 font-mono text-sm border border-white/5 h-48 overflow-y-auto custom-scrollbar flex flex-col-reverse">
+          <div className="space-y-3">
+            {isGeneratingReport ? (
+              <div className="flex items-center gap-3 text-neon-purple animate-pulse">
+                <Loader2 className="size-4 animate-spin" />
+                <span>Synthesizing final report...</span>
+              </div>
+            ) : progress.currentQuery ? (
+              <div className="flex items-start gap-3 text-white">
+                <span className="text-electric-blue shrink-0 mt-0.5">❯</span>
+                <span>
+                  Searching for:{" "}
+                  <span className="text-text-secondary">
+                    "{progress.currentQuery}"
+                  </span>
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 text-text-muted">
+                <span className="animate-pulse">_</span>
+              </div>
+            )}
+
+            {/* We could show history here if we had it in the progress object, 
+                    for now we just show the current state nicely */}
+            {progress.completedQueries > 0 && (
+              <div className="flex items-center gap-3 text-green-400/80">
+                <span className="text-green-500">✓</span>
+                <span>Completed {progress.completedQueries} search steps</span>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+
+        <div className="flex items-center justify-between text-xs text-text-muted px-2">
+          <div className="flex items-center gap-2">
+            <div className="size-2 rounded-full bg-green-500 animate-pulse" />
+            <span>Agent Active</span>
+          </div>
+          <div>
+            Depth Level:{" "}
+            <span className="text-white">
+              {progress.totalDepth - progress.currentDepth + 1}
+            </span>{" "}
+            / {progress.totalDepth}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -23,32 +23,32 @@ const features = [
 
 export function Features() {
   return (
-    <section className="section" id="features">
-      <div className="container mx-auto px-6">
+    <section className="section relative" id="features">
+      <div className="container-width">
         <div className="max-w-3xl mb-16 md:mb-20">
-          <h2 className="text-h2 font-semibold leading-[1.05] tracking-[-0.02em] mb-4">
-            <span className="text-gradient-primary">Research smarter,</span>{" "}
-            <span className="text-gradient-muted">not harder</span>
+          <h2 className="text-h2 font-medium leading-[1.1] tracking-tight mb-6">
+            <span className="text-white">Research smarter,</span>{" "}
+            <span className="text-white/40">not harder</span>
           </h2>
-          <p className="text-body-lg text-text-secondary leading-relaxed">
+          <p className="text-body-lg text-text-secondary leading-relaxed max-w-2xl font-light">
             Built on the latest AI research techniques to deliver insights that
             would take hours to compile manually.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="card group hover:bg-bg-tertiary transition-colors duration-300"
+              className="group p-8 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all duration-300 hover:-translate-y-1"
             >
-              <div className="p-3 rounded-xl bg-bg-primary w-fit mb-6 group-hover:bg-bg-secondary transition-colors duration-300">
-                <feature.icon className="size-6 text-text-muted" />
+              <div className="size-12 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <feature.icon className="size-6 text-electric-blue" />
               </div>
-              <h3 className="text-h4 font-semibold text-text-primary mb-3">
+              <h3 className="text-xl font-medium text-white mb-3">
                 {feature.title}
               </h3>
-              <p className="text-body text-text-secondary leading-relaxed">
+              <p className="text-text-secondary leading-relaxed">
                 {feature.description}
               </p>
             </div>

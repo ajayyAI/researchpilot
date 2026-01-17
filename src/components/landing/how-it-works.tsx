@@ -7,54 +7,56 @@ const steps = [
   },
   {
     number: "02",
-    title: "Configure depth & breadth",
+    title: "Configure settings",
     description:
       "Set how many parallel queries and recursive levels to explore your topic.",
   },
   {
     number: "03",
-    title: "AI does the research",
+    title: "AI Researcher",
     description:
-      "Watch as the AI recursively searches, learns, and follows promising leads.",
+      "Watch as the AI recursively searches, learns, and follows promising leads in real-time.",
   },
   {
     number: "04",
-    title: "Get your report",
+    title: "Final Report",
     description:
-      "Receive a comprehensive report synthesizing all findings with sources cited.",
+      "Receive a comprehensive report synthesizing all findings with citations and key takeaways.",
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section className="section bg-bg-inverse" id="how-it-works">
-      <div className="container mx-auto px-6">
+    <section className="section bg-charcoal/50" id="how-it-works">
+      <div className="container-width">
         <div className="max-w-3xl mb-16 md:mb-20">
-          <h2 className="text-h2 font-semibold leading-[1.05] tracking-[-0.02em] text-text-inverse mb-4">
+          <h2 className="text-h2 font-medium leading-[1.1] tracking-tight text-white mb-6">
             How it works
           </h2>
-          <p className="text-body-lg text-text-inverse/70 leading-relaxed">
-            Four simple steps to comprehensive research.
+          <p className="text-body-lg text-text-secondary leading-relaxed font-light">
+            Four simple steps to comprehensive, production-grade research.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
           {steps.map((step, index) => (
-            <div key={step.number} className="relative">
+            <div key={step.number} className="relative group">
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-8 left-full w-full h-px bg-text-inverse/10" />
+                <div className="hidden lg:block absolute top-6 left-[60%] w-[120%] h-px bg-white/10" />
               )}
 
-              <div className="space-y-4">
-                <span className="text-overline text-text-inverse/40">
+              <div className="space-y-6 relative z-10">
+                <span className="inline-block text-4xl font-mono font-bold text-white/5 group-hover:text-electric-blue/20 transition-colors duration-300">
                   {step.number}
                 </span>
-                <h3 className="text-h5 font-semibold text-text-inverse">
-                  {step.title}
-                </h3>
-                <p className="text-body-sm text-text-inverse/60 leading-relaxed">
-                  {step.description}
-                </p>
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-2">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
               </div>
             </div>
           ))}

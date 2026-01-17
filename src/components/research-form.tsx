@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea"; // Ensure we import from UI
+import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 
 interface ResearchFormProps {
   query: string;
@@ -28,97 +29,98 @@ export function ResearchForm({
   loadingText = "Researching...",
 }: ResearchFormProps) {
   return (
-    <div className="card space-y-8">
-      <div className="space-y-3">
-        <label
-          htmlFor="query"
-          className="text-body-sm font-medium text-text-primary"
-        >
-          Research Topic
-        </label>
-        <textarea
-          id="query"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="What would you like to research? Be specific for better results..."
-          className="w-full min-h-[120px] px-5 py-4 bg-bg-primary border border-border-default rounded-xl text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-strong transition-colors resize-none text-body leading-relaxed"
-          disabled={isLoading}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+    <div className="glass-card max-w-3xl mx-auto rounded-3xl p-8 md:p-10 border border-white/10">
+      <div className="space-y-8">
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <label
-              htmlFor="breadth"
-              className="text-body-sm font-medium text-text-primary"
-            >
-              Breadth
-            </label>
-            <span className="text-body-sm font-semibold text-text-primary tabular-nums">
-              {breadth}
-            </span>
-          </div>
-          <Slider
-            id="breadth"
-            min={1}
-            max={10}
-            step={1}
-            value={[breadth]}
-            onValueChange={(value) => onBreadthChange(value[0])}
+          <label
+            htmlFor="query"
+            className="flex items-center gap-2 text-sm font-medium text-white ml-1"
+          >
+            <Sparkles className="size-4 text-electric-blue" />
+            Research Topic
+          </label>
+          <Textarea
+            id="query"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder="What would you like to research? Be specific for better results..."
             disabled={isLoading}
+            className="text-lg leading-relaxed"
           />
-          <p className="text-caption text-text-muted">
-            Number of parallel queries per level
-          </p>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <label
-              htmlFor="depth"
-              className="text-body-sm font-medium text-text-primary"
-            >
-              Depth
-            </label>
-            <span className="text-body-sm font-semibold text-text-primary tabular-nums">
-              {depth}
-            </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <label
+                htmlFor="breadth"
+                className="text-sm font-medium text-text-secondary"
+              >
+                Breadth:{" "}
+                <span className="text-white font-mono ml-2">{breadth}</span>
+              </label>
+            </div>
+            <Slider
+              id="breadth"
+              min={1}
+              max={10}
+              step={1}
+              value={[breadth]}
+              onValueChange={(value) => onBreadthChange(value[0])}
+              disabled={isLoading}
+            />
+            <p className="text-xs text-text-muted">
+              Higher breadth means more parallel queries per step.
+            </p>
           </div>
-          <Slider
-            id="depth"
-            min={1}
-            max={5}
-            step={1}
-            value={[depth]}
-            onValueChange={(value) => onDepthChange(value[0])}
-            disabled={isLoading}
-          />
-          <p className="text-caption text-text-muted">
-            Levels of recursive research
-          </p>
+
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <label
+                htmlFor="depth"
+                className="text-sm font-medium text-text-secondary"
+              >
+                Depth:{" "}
+                <span className="text-white font-mono ml-2">{depth}</span>
+              </label>
+            </div>
+            <Slider
+              id="depth"
+              min={1}
+              max={5}
+              step={1}
+              value={[depth]}
+              onValueChange={(value) => onDepthChange(value[0])}
+              disabled={isLoading}
+            />
+            <p className="text-xs text-text-muted">
+              Higher depth means more recursive follow-up steps.
+            </p>
+          </div>
+        </div>
+
+        <div className="pt-4">
+          <Button
+            onClick={onSubmit}
+            disabled={!query.trim() || isLoading}
+            variant="default"
+            size="lg"
+            className="w-full h-14 text-base rounded-2xl"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="size-5 animate-spin mr-2" />
+                <span>{loadingText}</span>
+              </>
+            ) : (
+              <>
+                <span>Start Deep Research</span>
+                <ArrowRight className="size-5 ml-2" />
+              </>
+            )}
+          </Button>
         </div>
       </div>
-
-      <Button
-        onClick={onSubmit}
-        disabled={!query.trim() || isLoading}
-        variant="dark"
-        size="lg"
-        className="w-full"
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="size-5 animate-spin" />
-            <span>{loadingText}</span>
-          </>
-        ) : (
-          <>
-            <span>Start Research</span>
-            <ArrowRight className="size-5" />
-          </>
-        )}
-      </Button>
     </div>
   );
 }
