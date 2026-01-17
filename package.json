@@ -25,6 +25,7 @@
     "ai": "^6.0.39",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.26.2",
     "js-tiktoken": "^1.0.21",
     "lucide-react": "^0.562.0",
     "next": "16.1.3",

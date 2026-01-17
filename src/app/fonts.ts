@@ -1,13 +1,13 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, DM_Sans } from "next/font/google";
 
-export const geistSans = Geist({
-  variable: "--font-geist-sans",
+export const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
   display: "swap",
 });
 
-export const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+export const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
   display: "swap",
 });

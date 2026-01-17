@@ -1,60 +1,89 @@
+"use client";
+
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden pt-32 pb-24 md:pt-48 md:pb-32">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Effects */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full opacity-30 pointer-events-none">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-electric-blue rounded-full blur-[128px]" />
-        <div className="absolute top-40 right-20 w-80 h-80 bg-neon-purple rounded-full blur-[128px]" />
+      <div className="absolute inset-0 bg-[#030305]">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-electric-blue/10 rounded-full blur-[120px] opacity-30 animate-pulse" />
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-cyber-purple/10 rounded-full blur-[100px] opacity-20" />
       </div>
 
-      <div className="container-width relative z-10">
-        <div className="max-w-4xl mx-auto text-center hero-stagger">
-          <div className="hero-fade-in inline-flex items-center gap-2 px-4 py-1.5 mb-8 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-            <Sparkles className="size-3.5 text-electric-blue" />
-            <span className="text-xs sm:text-sm font-medium text-white/90">
-              AI-Powered Research Agent
-            </span>
-          </div>
+      {/* Grid Pattern - CSS-based */}
+      <div
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)`,
+          backgroundSize: "60px 60px",
+          maskImage: "linear-gradient(180deg, white, transparent)",
+        }}
+      />
 
-          <h1 className="hero-fade-in text-5xl sm:text-6xl md:text-7xl font-medium leading-[1.1] tracking-tight mb-8">
-            <span className="text-white">Deep research</span>{" "}
-            <span className="text-white/40">at the speed of thought</span>
-          </h1>
+      <div className="container-width relative z-10 flex flex-col items-center text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-sm"
+        >
+          <Sparkles className="size-4 text-electric-blue" />
+          <span className="text-sm font-medium text-white/80">
+            Research at the speed of thought
+          </span>
+        </motion.div>
 
-          <p className="hero-fade-in text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto mb-12 leading-relaxed font-light">
-            Recursive AI-powered research that explores topics in depth,
-            synthesizes findings from multiple sources, and generates
-            comprehensive reports in minutes.
-          </p>
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+          className="text-display text-white mb-8 max-w-5xl mx-auto"
+        >
+          Deep Research <br />
+          <span className="text-gradient">Without the Noise</span>
+        </motion.h1>
 
-          <div className="hero-fade-in flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              size="lg"
-              className="h-12 px-8 rounded-full text-base shadow-electric-blue/20"
-              asChild
-            >
-              <Link href="/research">
-                <span>Start Researching</span>
-                <ArrowRight className="size-4 ml-2" />
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="h-12 px-8 rounded-full text-base border-white/10 hover:bg-white/5"
-              asChild
-            >
-              <a href="#how-it-works">
-                <span>See How It Works</span>
-              </a>
-            </Button>
-          </div>
-        </div>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+          className="text-xl text-text-secondary max-w-2xl mb-10 leading-relaxed"
+        >
+          Stop wading through SEO slop. Get precise, synthesized answers to
+          complex questions, backed by verified sources.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+          className="flex flex-col sm:flex-row items-center gap-4"
+        >
+          <Button
+            size="lg"
+            className="rounded-full bg-electric-blue hover:bg-electric-blue/90 text-white px-8 h-12 text-base shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all duration-300"
+            asChild
+          >
+            <Link href="/research">
+              Start Researching <ArrowRight className="ml-2 size-4" />
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="rounded-full border-white/10 text-white hover:bg-white/5 h-12 px-8 text-base backdrop-blur-sm"
+          >
+            How it works
+          </Button>
+        </motion.div>
       </div>
+
+      {/* Decorative Elements */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-[#030305] to-transparent pointer-events-none" />
     </section>
   );
 }

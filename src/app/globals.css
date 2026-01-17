@@ -5,36 +5,22 @@
    ============================================ */
 
 @theme {
-  /* Colors - Deep Dark Palette */
-  --color-obsidian: #050505; /* Main bg */
-  --color-charcoal: #0f0f0f; /* Secondary bg */
-  --color-graphite: #1a1a1a; /* Borders/Subtle bg */
-
-  --color-ash: #888888; /* Muted text */
-  --color-smoke: #444444; /* Darker borders */
-  --color-mist: #eaeaea; /* Primary text */
-
-  /* Accents - Electric & Vibrant */
-  --color-electric-blue: #2962ff;
-  --color-neon-purple: #d500f9;
-  --color-cyan-glow: #00e5ff;
+  /* Colors - Deep Void Palette */
+  --color-deep-void: #030305;
+  --color-electric-blue: #3b82f6;
+  --color-cyber-purple: #8b5cf6;
+  --color-off-white: #f8fafc;
+  --color-void-border: rgba(255, 255, 255, 0.08);
 
   /* Semantic Mappings */
-  --color-bg-primary: var(--color-obsidian);
-  --color-bg-secondary: var(--color-charcoal);
-  --color-bg-tertiary: var(--color-graphite);
-
-  --color-text-primary: var(--color-mist);
-  --color-text-secondary: var(--color-ash);
-  --color-text-muted: #555555;
-
-  --color-border-subtle: rgba(255, 255, 255, 0.08);
-  --color-border-default: rgba(255, 255, 255, 0.12);
-  --color-border-strong: rgba(255, 255, 255, 0.2);
+  --color-bg-primary: var(--color-deep-void);
+  --color-text-primary: var(--color-off-white);
+  --color-text-secondary: #94a3b8; /* slate-400 */
 
   /* Typography */
-  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-sans: var(--font-dm-sans), system-ui, -apple-system, sans-serif;
+  --font-heading:
+    var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
 
   /* Animations */
   --animate-fade-in: fade-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -80,13 +66,16 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    background-color: var(--color-obsidian);
-    color: var(--color-mist);
+    background-color: var(--color-deep-void);
+    color: var(--color-off-white);
   }
 
   body {
-    @apply bg-bg-primary text-text-primary antialiased;
-    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1,
@@ -95,83 +84,79 @@
   h4,
   h5,
   h6 {
-    @apply text-text-primary font-medium tracking-tight;
+    font-family: var(--font-heading);
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    font-weight: 600;
   }
 
-  /* Selection */
   ::selection {
-    @apply bg-electric-blue/20 text-electric-blue;
+    background-color: rgba(59, 130, 246, 0.2); /* electric-blue/20 */
+    color: var(--color-electric-blue);
   }
 }
 
-/* ============================================
-   Utilities & Components
-   ============================================ */
-
 @layer utilities {
   .glass {
-    @apply bg-white/[0.03] backdrop-blur-xl border border-white/5;
+    @apply bg-white/3 backdrop-blur-xl border border-white/5;
   }
 
   .glass-card {
-    @apply bg-charcoal/50 backdrop-blur-2xl border border-white/[0.08] shadow-2xl;
+    @apply bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl;
   }
 
   .text-glow {
-    text-shadow: 0 0 20px rgba(41, 98, 255, 0.3);
+    text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
   }
 
   .container-width {
     @apply max-w-7xl mx-auto px-6 sm:px-8;
   }
 
-  /* Typography Scale */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-linear-to-r from-electric-blue to-cyber-purple;
+  }
+
+  /* Typography Scale - Extreme Weight Contrast */
   .text-display {
-    @apply text-5xl sm:text-6xl md:text-7xl font-medium;
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    font-family: var(--font-heading);
   }
 
   .text-h1 {
-    @apply text-4xl sm:text-5xl md:text-6xl font-medium;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-family: var(--font-heading);
   }
 
   .text-h2 {
-    @apply text-3xl sm:text-4xl md:text-5xl font-medium;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-family: var(--font-heading);
   }
 
   .text-h3 {
-    @apply text-2xl sm:text-3xl font-medium;
-  }
-
-  .text-h4 {
-    @apply text-xl sm:text-2xl font-medium;
-  }
-
-  .text-h5 {
-    @apply text-lg sm:text-xl font-medium;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    font-family: var(--font-heading);
   }
 
   .text-body-lg {
-    @apply text-lg sm:text-xl;
+    font-size: 1.25rem;
+    line-height: 1.6;
+    font-weight: 300;
   }
 
-  .text-body {
-    @apply text-base;
-  }
-
-  .text-body-sm {
-    @apply text-sm;
-  }
-
-  .text-caption {
-    @apply text-xs;
-  }
-
-  /* Section Spacing */
   .section {
-    @apply py-20 md:py-28;
-  }
-
-  .section-compact {
-    @apply py-12 md:py-16;
+    @apply py-24 md:py-32;
   }
 }
