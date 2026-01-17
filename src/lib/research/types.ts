@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-// ============================================
-// Research Configuration
-// ============================================
-
 export interface ResearchConfig {
   /** The user's research query */
   query: string;
@@ -14,10 +10,6 @@ export interface ResearchConfig {
   /** Combined query including follow-up answers */
   combinedQuery?: string;
 }
-
-// ============================================
-// Research Progress Tracking
-// ============================================
 
 export interface ResearchProgress {
   /** Current depth level (counts down from initial) */
@@ -38,20 +30,12 @@ export interface ResearchProgress {
   status?: string;
 }
 
-// ============================================
-// Research Results
-// ============================================
-
 export interface ResearchResult {
   /** Accumulated learnings from all searches */
   learnings: string[];
   /** All URLs visited during research */
   visitedUrls: string[];
 }
-
-// ============================================
-// SERP Query Schemas (AI SDK v6 structured outputs)
-// ============================================
 
 export const SerpQuerySchema = z.object({
   query: z.string().describe("The SERP query to execute"),
@@ -69,10 +53,6 @@ export const SerpQueriesSchema = z.object({
 export type SerpQuery = z.infer<typeof SerpQuerySchema>;
 export type SerpQueries = z.infer<typeof SerpQueriesSchema>;
 
-// ============================================
-// Learning Extraction Schemas
-// ============================================
-
 export const LearningsSchema = z.object({
   learnings: z
     .array(z.string())
@@ -86,10 +66,6 @@ export const LearningsSchema = z.object({
 
 export type Learnings = z.infer<typeof LearningsSchema>;
 
-// ============================================
-// Report Generation Schema
-// ============================================
-
 export const ReportSchema = z.object({
   reportMarkdown: z
     .string()
@@ -100,10 +76,6 @@ export const ReportSchema = z.object({
 
 export type Report = z.infer<typeof ReportSchema>;
 
-// ============================================
-// Feedback/Follow-up Questions Schema
-// ============================================
-
 export const FeedbackSchema = z.object({
   questions: z
     .array(z.string())
@@ -113,10 +85,6 @@ export const FeedbackSchema = z.object({
 });
 
 export type Feedback = z.infer<typeof FeedbackSchema>;
-
-// ============================================
-// Search Result Types (Firecrawl)
-// ============================================
 
 export interface SearchResult {
   url: string;

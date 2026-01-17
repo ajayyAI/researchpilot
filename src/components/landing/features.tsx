@@ -25,7 +25,6 @@ export function Features() {
   return (
     <section className="section" id="features">
       <div className="container mx-auto px-6">
-        {/* Section Header */}
         <div className="max-w-3xl mb-16 md:mb-20">
           <h2 className="text-h2 font-semibold leading-[1.05] tracking-[-0.02em] mb-4">
             <span className="text-gradient-primary">Research smarter,</span>{" "}
@@ -37,7 +36,6 @@ export function Features() {
           </p>
         </div>
 
-        {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {features.map((feature) => (
             <div

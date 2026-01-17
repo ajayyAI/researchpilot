@@ -29,7 +29,6 @@ export function ResearchForm({
 }: ResearchFormProps) {
   return (
     <div className="card space-y-8">
-      {/* Query Input */}
       <div className="space-y-3">
         <label
           htmlFor="query"
@@ -47,9 +46,7 @@ export function ResearchForm({
         />
       </div>
 
-      {/* Breadth/Depth Controls */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-        {/* Breadth Slider */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <label
@@ -76,7 +73,6 @@ export function ResearchForm({
           </p>
         </div>
 
-        {/* Depth Slider */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <label
@@ -104,7 +100,6 @@ export function ResearchForm({
         </div>
       </div>
 
-      {/* Submit Button */}
       <Button
         onClick={onSubmit}
         disabled={!query.trim() || isLoading}

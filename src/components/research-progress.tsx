@@ -22,7 +22,6 @@ export function ResearchProgress({
 
   return (
     <div className="card space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-h5 font-semibold text-text-primary">
           {isGeneratingReport ? "Generating Report" : "Research Progress"}
@@ -32,10 +31,8 @@ export function ResearchProgress({
         </span>
       </div>
 
-      {/* Progress Bar */}
       <Progress value={progressPercent} className="h-2" />
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4">
         <div className="flex items-center gap-3 p-4 rounded-xl bg-bg-primary">
           <div className="p-2 rounded-lg bg-bg-secondary">
@@ -62,7 +59,6 @@ export function ResearchProgress({
         </div>
       </div>
 
-      {/* Current Query */}
       {progress.currentQuery && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-caption text-text-muted">
@@ -75,7 +71,6 @@ export function ResearchProgress({
         </div>
       )}
 
-      {/* Status */}
       {progress.status && (
         <div className="flex items-center gap-2">
           <span className="relative flex size-2">

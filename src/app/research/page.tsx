@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import type { ResearchProgress } from "@/lib/research";
 
-// Research components
 import { ResearchForm } from "@/components/research-form";
 import { ResearchProgress as ResearchProgressCard } from "@/components/research-progress";
 import { ResearchReport } from "@/components/research-report";
@@ -30,12 +29,10 @@ interface ResearchResult {
 }
 
 export default function ResearchPage() {
-  // Form state
   const [query, setQuery] = useState("");
   const [breadth, setBreadth] = useState(4);
   const [depth, setDepth] = useState(2);
 
-  // Research state
   const [state, setState] = useState<ResearchState>("idle");
   const [progress, setProgress] = useState<ResearchProgress | null>(null);
   const [result, setResult] = useState<ResearchResult | null>(null);
@@ -119,7 +116,6 @@ export default function ResearchPage() {
     <main className="min-h-screen bg-bg-primary">
       <section className="section">
         <div className="container mx-auto px-6">
-          {/* Header */}
           <div className="max-w-4xl mx-auto mb-8">
             <Button variant="ghost" size="sm" asChild className="mb-6 -ml-4">
               <Link href="/">
@@ -140,9 +136,7 @@ export default function ResearchPage() {
               </p>
             </div>
 
-            {/* Research Interface */}
             <div className="max-w-2xl mx-auto space-y-8">
-              {/* Form */}
               <ResearchForm
                 query={query}
                 onQueryChange={setQuery}
@@ -155,7 +149,6 @@ export default function ResearchPage() {
                 loadingText={loadingText}
               />
 
-              {/* Progress */}
               {progress && isLoading && (
                 <ResearchProgressCard
                   progress={progress}
@@ -163,7 +156,6 @@ export default function ResearchPage() {
                 />
               )}
 
-              {/* Error */}
               {error && (
                 <div className="card border border-red-200 bg-red-50">
                   <div className="flex items-start gap-4">
@@ -178,7 +170,6 @@ export default function ResearchPage() {
                 </div>
               )}
 
-              {/* Results */}
               {result && state === "complete" && (
                 <ResearchReport
                   report={result.report}

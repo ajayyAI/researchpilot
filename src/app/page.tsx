@@ -1,6 +1,5 @@
 "use client";
 
-// Landing sections
 import { Hero } from "@/components/landing/hero";
 import { Features } from "@/components/landing/features";
 import { HowItWorks } from "@/components/landing/how-it-works";
@@ -11,12 +10,10 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main className="min-h-screen bg-bg-primary">
-      {/* Landing Sections */}
       <Hero />
       <Features />
       <HowItWorks />
 
-      {/* CTA Section */}
       <section className="section">
         <div className="container mx-auto px-6">
           <div className="card-dark max-w-4xl mx-auto text-center py-16 md:py-20">
@@ -37,7 +34,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="section-compact border-t border-border-default">
         <div className="container mx-auto px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

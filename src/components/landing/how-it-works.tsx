@@ -29,7 +29,6 @@ export function HowItWorks() {
   return (
     <section className="section bg-bg-inverse" id="how-it-works">
       <div className="container mx-auto px-6">
-        {/* Section Header */}
         <div className="max-w-3xl mb-16 md:mb-20">
           <h2 className="text-h2 font-semibold leading-[1.05] tracking-[-0.02em] text-text-inverse mb-4">
             How it works
@@ -39,11 +38,9 @@ export function HowItWorks() {
           </p>
         </div>
 
-        {/* Steps Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {steps.map((step, index) => (
             <div key={step.number} className="relative">
-              {/* Connector line (hidden on last item and mobile) */}
               {index < steps.length - 1 && (
                 <div className="hidden lg:block absolute top-8 left-full w-full h-px bg-text-inverse/10" />
               )}

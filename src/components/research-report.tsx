@@ -26,7 +26,6 @@ export function ResearchReport({
 
   return (
     <div className="card space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-bg-primary">
@@ -38,7 +37,6 @@ export function ResearchReport({
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Stats */}
           <div className="flex gap-4 text-body-sm">
             <span className="text-text-muted">
               <span className="font-semibold text-text-primary">
@@ -54,7 +52,6 @@ export function ResearchReport({
             </span>
           </div>
 
-          {/* Copy Button */}
           <Button
             variant="ghost"
             size="icon-sm"
@@ -70,10 +67,8 @@ export function ResearchReport({
         </div>
       </div>
 
-      {/* Divider */}
       <div className="border-t border-border-default" />
 
-      {/* Markdown Content */}
       <div className="prose prose-neutral max-w-none prose-headings:text-text-primary prose-headings:font-semibold prose-h1:text-h3 prose-h2:text-h4 prose-h3:text-h5 prose-p:text-text-secondary prose-p:leading-relaxed prose-strong:text-text-primary prose-a:text-text-primary prose-a:underline prose-a:underline-offset-2 hover:prose-a:text-text-muted prose-code:bg-bg-primary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-body-sm prose-code:before:content-none prose-code:after:content-none prose-pre:bg-bg-primary prose-pre:border prose-pre:border-border-default prose-pre:rounded-xl prose-ul:text-text-secondary prose-ol:text-text-secondary prose-li:marker:text-text-muted">
         <ReactMarkdown
           components={{

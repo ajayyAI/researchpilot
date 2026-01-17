@@ -18,10 +18,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create a text encoder for streaming
     const encoder = new TextEncoder();
 
-    // Create a readable stream for sending progress updates
     const stream = new ReadableStream({
       async start(controller) {
         const sendEvent = (event: string, data: unknown) => {
@@ -30,13 +28,11 @@ export async function POST(request: Request) {
         };
 
         try {
-          // Send initial status
           sendEvent("status", {
             status: "starting",
             message: "Starting deep research...",
           });
 
-          // Run the research with progress callbacks
           const result = await deepResearch({
             query,
             breadth: Math.min(Math.max(breadth, 1), 10),
@@ -46,20 +42,17 @@ export async function POST(request: Request) {
             },
           });
 
-          // Send learnings count
           sendEvent("status", {
             status: "generating-report",
             message: `Generating report from ${result.learnings.length} learnings...`,
           });
 
-          // Generate the final report
           const report = await generateReport(
             query,
             result.learnings,
             result.visitedUrls,
           );
 
-          // Send the final result
           sendEvent("complete", {
             report,
             learnings: result.learnings,
