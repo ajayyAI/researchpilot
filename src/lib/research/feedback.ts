@@ -1,7 +1,6 @@
 import { generateText, Output } from "ai";
-
-import { getModel } from "./providers";
 import { getFeedbackPrompt, getSystemPrompt } from "./prompts";
+import { getModel } from "./providers";
 import { FeedbackSchema } from "./types";
 
 /**

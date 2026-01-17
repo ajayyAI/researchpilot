@@ -1,8 +1,8 @@
 "use client";
 
+import { Loader2, Terminal } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import type { ResearchProgress as ResearchProgressType } from "@/lib/research";
-import { Loader2, Terminal } from "lucide-react";
 
 interface ResearchProgressProps {
   progress: ResearchProgressType;

@@ -10,22 +10,19 @@ export { deepResearch, generateReport } from "./engine";
 
 // Feedback generation
 export { generateFeedback } from "./feedback";
-
-// Search utilities
-export { searchWeb, searchWebBatch, createRateLimiter } from "./search";
-
-// Text utilities
-export { trimPrompt, countTokens } from "./text-utils";
-
 // AI provider
 export { getModel, getModelId } from "./providers";
+// Search utilities
+export { createRateLimiter, searchWeb, searchWebBatch } from "./search";
+// Text utilities
+export { countTokens, trimPrompt } from "./text-utils";
 
 // Types
 export type {
   ResearchConfig,
   ResearchProgress,
   ResearchResult,
-  SerpQuery,
-  SearchResult,
   SearchResponse,
+  SearchResult,
+  SerpQuery,
 } from "./types";

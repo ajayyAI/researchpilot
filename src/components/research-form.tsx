@@ -1,9 +1,9 @@
 "use client";
 
+import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea"; // Ensure we import from UI
-import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 
 interface ResearchFormProps {
   query: string;

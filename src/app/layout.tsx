@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { spaceGrotesk, dmSans } from "./fonts";
+import { Header } from "@/components/layout/Header";
+import { dmSans, spaceGrotesk } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {

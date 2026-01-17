@@ -1,8 +1,8 @@
-import { Hero } from "@/components/landing/hero";
-import { Features } from "@/components/landing/features";
-import { SocialProof } from "@/components/landing/social-proof";
-import { Pricing } from "@/components/landing/pricing";
 import { CTA } from "@/components/landing/cta";
+import { Features } from "@/components/landing/features";
+import { Hero } from "@/components/landing/hero";
+import { Pricing } from "@/components/landing/pricing";
+import { SocialProof } from "@/components/landing/social-proof";
 
 export default function Home() {
   return (

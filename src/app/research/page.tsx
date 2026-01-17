@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import type { ResearchProgress } from "@/lib/research";
-
+import { AlertCircle, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useState } from "react";
 import { ResearchForm } from "@/components/research-form";
 import { ResearchProgress as ResearchProgressCard } from "@/components/research-progress";
 import { ResearchReport } from "@/components/research-report";
-
-import { AlertCircle, ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import type { ResearchProgress } from "@/lib/research";
 
 type ResearchState =
   | "idle"

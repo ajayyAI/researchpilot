@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Layers, Search, FileText, Globe } from "lucide-react";
+import { FileText, Globe, Layers, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const features = [

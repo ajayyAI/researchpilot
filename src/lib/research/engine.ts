@@ -1,22 +1,21 @@
 import { generateText, Output } from "ai";
 import pLimit from "p-limit";
-
-import { getModel } from "./providers";
 import {
   getLearningsPrompt,
   getReportPrompt,
   getSerpQueryPrompt,
   getSystemPrompt,
 } from "./prompts";
-import { searchWeb, getConcurrencyLimit } from "./search";
+import { getModel } from "./providers";
+import { getConcurrencyLimit, searchWeb } from "./search";
 import { trimPrompt } from "./text-utils";
 import {
-  type ResearchProgress,
-  type ResearchResult,
-  type SerpQuery,
-  SerpQueriesSchema,
   LearningsSchema,
   ReportSchema,
+  type ResearchProgress,
+  type ResearchResult,
+  SerpQueriesSchema,
+  type SerpQuery,
 } from "./types";
 
 /**

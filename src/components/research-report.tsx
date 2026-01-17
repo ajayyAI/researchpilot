@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Check, Copy, ExternalLink, FileText } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { Button } from "@/components/ui/button";
 
 interface ResearchReportProps {
   report: string;
