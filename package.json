@@ -19,6 +19,9 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.12",
     "@mendable/firecrawl-js": "^4.11.1",
+    "@radix-ui/react-progress": "^1.1.8",
+    "@radix-ui/react-slider": "^1.3.6",
+    "@radix-ui/react-slot": "^1.2.4",
     "ai": "^6.0.39",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -28,6 +31,7 @@
     "p-limit": "^7.2.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.3.5"
   },

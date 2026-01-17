@@ -8,10 +8,19 @@ import type { SearchResult } from "./types";
  * Handles search queries with rate limiting and result normalization.
  */
 
-// Initialize Firecrawl client
-const firecrawl = new Firecrawl({
-  apiKey: process.env.FIRECRAWL_API_KEY ?? "",
-});
+// Lazy initialization of Firecrawl client to avoid requiring API key at build time
+let firecrawlClient: Firecrawl | null = null;
+
+function getFirecrawl(): Firecrawl {
+  if (!firecrawlClient) {
+    const apiKey = process.env.FIRECRAWL_API_KEY;
+    if (!apiKey) {
+      throw new Error("FIRECRAWL_API_KEY environment variable is required");
+    }
+    firecrawlClient = new Firecrawl({ apiKey });
+  }
+  return firecrawlClient;
+}
 
 // Concurrency limit for API calls
 const concurrencyLimit = Number(process.env.FIRECRAWL_CONCURRENCY) || 2;
@@ -39,7 +48,7 @@ export async function searchWeb(
   } = options;
 
   try {
-    const response: SearchData = await firecrawl.search(query, {
+    const response: SearchData = await getFirecrawl().search(query, {
       limit: resultLimit,
       timeout,
       scrapeOptions: scrapeContent ? { formats: ["markdown"] } : undefined,
