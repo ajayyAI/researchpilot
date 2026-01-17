@@ -13,21 +13,21 @@ import { FeedbackSchema } from "./types";
  * @returns Array of follow-up questions
  */
 export async function generateFeedback(
-	query: string,
-	numQuestions = 3,
+  query: string,
+  numQuestions = 3,
 ): Promise<string[]> {
-	const { output } = await generateText({
-		model: getModel(),
-		system: getSystemPrompt(),
-		prompt: getFeedbackPrompt(query, numQuestions),
-		output: Output.object({
-			schema: FeedbackSchema,
-		}),
-	});
+  const { output } = await generateText({
+    model: getModel(),
+    system: getSystemPrompt(),
+    prompt: getFeedbackPrompt(query, numQuestions),
+    output: Output.object({
+      schema: FeedbackSchema,
+    }),
+  });
 
-	if (!output) {
-		return [];
-	}
+  if (!output) {
+    return [];
+  }
 
-	return output.questions.slice(0, numQuestions);
+  return output.questions.slice(0, numQuestions);
 }

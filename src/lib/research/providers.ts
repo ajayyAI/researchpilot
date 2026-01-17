@@ -8,7 +8,7 @@ import type { LanguageModel } from "ai";
 
 // Create OpenAI client with environment configuration
 const openai = createOpenAI({
-	apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 /**
@@ -16,13 +16,13 @@ const openai = createOpenAI({
  * Uses environment variable AI_MODEL or defaults to gpt-4o.
  */
 export function getModel(): LanguageModel {
-	const modelId = process.env.AI_MODEL || "gpt-4o";
-	return openai(modelId);
+  const modelId = process.env.AI_MODEL || "gpt-4o";
+  return openai(modelId);
 }
 
 /**
  * Get model ID for logging purposes.
  */
 export function getModelId(): string {
-	return process.env.AI_MODEL || "gpt-4o";
+  return process.env.AI_MODEL || "gpt-4o";
 }

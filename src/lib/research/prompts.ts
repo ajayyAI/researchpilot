@@ -8,9 +8,9 @@
  * Establishes the AI as an expert researcher with specific behavioral guidelines.
  */
 export function getSystemPrompt(): string {
-	const now = new Date().toISOString();
+  const now = new Date().toISOString();
 
-	return `You are an expert researcher. Today is ${now}. Follow these instructions when responding:
+  return `You are an expert researcher. Today is ${now}. Follow these instructions when responding:
 
 - You may be asked to research subjects after your knowledge cutoff. Assume the user is correct when presented with recent information.
 - The user is a highly experienced analyst. Be as detailed as possible and ensure accuracy.
@@ -29,15 +29,15 @@ export function getSystemPrompt(): string {
  * Prompt for generating SERP queries from user input.
  */
 export function getSerpQueryPrompt(
-	query: string,
-	numQueries: number,
-	learnings?: string[],
+  query: string,
+  numQueries: number,
+  learnings?: string[],
 ): string {
-	const learningsContext = learnings?.length
-		? `\n\nHere are learnings from previous research. Use them to generate more specific and targeted queries:\n${learnings.join("\n")}`
-		: "";
+  const learningsContext = learnings?.length
+    ? `\n\nHere are learnings from previous research. Use them to generate more specific and targeted queries:\n${learnings.join("\n")}`
+    : "";
 
-	return `Given the following research prompt from the user, generate a list of SERP queries to research the topic effectively.
+  return `Given the following research prompt from the user, generate a list of SERP queries to research the topic effectively.
 
 Return a maximum of ${numQueries} queries, but return fewer if the original prompt is clear enough.
 Each query must be unique and explore different aspects of the topic.
@@ -49,16 +49,16 @@ Each query must be unique and explore different aspects of the topic.
  * Prompt for extracting learnings from search results.
  */
 export function getLearningsPrompt(
-	query: string,
-	contents: string[],
-	numLearnings: number,
-	numFollowUpQuestions: number,
+  query: string,
+  contents: string[],
+  numLearnings: number,
+  numFollowUpQuestions: number,
 ): string {
-	const contentsStr = contents
-		.map((content) => `<content>\n${content}\n</content>`)
-		.join("\n");
+  const contentsStr = contents
+    .map((content) => `<content>\n${content}\n</content>`)
+    .join("\n");
 
-	return `Given the following contents from a SERP search for the query <query>${query}</query>, extract key learnings.
+  return `Given the following contents from a SERP search for the query <query>${query}</query>, extract key learnings.
 
 Requirements for learnings:
 - Return a maximum of ${numLearnings} learnings, but fewer if the content is limited
@@ -80,11 +80,11 @@ Requirements for follow-up questions:
  * Prompt for generating the final research report.
  */
 export function getReportPrompt(query: string, learnings: string[]): string {
-	const learningsStr = learnings
-		.map((learning) => `<learning>\n${learning}\n</learning>`)
-		.join("\n");
+  const learningsStr = learnings
+    .map((learning) => `<learning>\n${learning}\n</learning>`)
+    .join("\n");
 
-	return `Given the following research prompt and accumulated learnings, write a comprehensive research report.
+  return `Given the following research prompt and accumulated learnings, write a comprehensive research report.
 
 Requirements:
 - Be as detailed as possible, aim for 3+ pages of content
@@ -105,7 +105,7 @@ ${learningsStr}
  * Prompt for generating follow-up questions before research starts.
  */
 export function getFeedbackPrompt(query: string, numQuestions: number): string {
-	return `Given the following research query from the user, generate clarifying follow-up questions to better understand their research needs.
+  return `Given the following research query from the user, generate clarifying follow-up questions to better understand their research needs.
 
 Return a maximum of ${numQuestions} questions, but fewer if the query is already clear and specific.
 Questions should help narrow down:

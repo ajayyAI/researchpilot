@@ -174,9 +174,7 @@ export async function deepResearch({
           });
 
           // Collect URLs
-          const newUrls = searchResults
-            .map((r) => r.url)
-            .filter((url) => url);
+          const newUrls = searchResults.map((r) => r.url).filter((url) => url);
 
           // Extract content for processing
           const contents = searchResults
@@ -251,7 +249,10 @@ Follow-up research directions: ${processed.followUpQuestions.map((q) => `\n- ${q
           if (errorMessage.includes("Timeout")) {
             console.error(`Timeout for query "${serpQuery.query}"`);
           } else {
-            console.error(`Error for query "${serpQuery.query}":`, errorMessage);
+            console.error(
+              `Error for query "${serpQuery.query}":`,
+              errorMessage,
+            );
           }
 
           return {

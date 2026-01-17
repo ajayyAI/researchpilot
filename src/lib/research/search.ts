@@ -10,7 +10,7 @@ import type { SearchResult } from "./types";
 
 // Initialize Firecrawl client
 const firecrawl = new Firecrawl({
-	apiKey: process.env.FIRECRAWL_API_KEY ?? "",
+  apiKey: process.env.FIRECRAWL_API_KEY ?? "",
 });
 
 // Concurrency limit for API calls
@@ -25,49 +25,54 @@ const limit = pLimit(concurrencyLimit);
  * @returns Normalized search results
  */
 export async function searchWeb(
-	query: string,
-	options: {
-		limit?: number;
-		timeout?: number;
-		scrapeContent?: boolean;
-	} = {},
+  query: string,
+  options: {
+    limit?: number;
+    timeout?: number;
+    scrapeContent?: boolean;
+  } = {},
 ): Promise<SearchResult[]> {
-	const { limit: resultLimit = 5, timeout = 15000, scrapeContent = true } = options;
+  const {
+    limit: resultLimit = 5,
+    timeout = 15000,
+    scrapeContent = true,
+  } = options;
 
-	try {
-		const response: SearchData = await firecrawl.search(query, {
-			limit: resultLimit,
-			timeout,
-			scrapeOptions: scrapeContent
-				? { formats: ["markdown"] }
-				: undefined,
-		});
+  try {
+    const response: SearchData = await firecrawl.search(query, {
+      limit: resultLimit,
+      timeout,
+      scrapeOptions: scrapeContent ? { formats: ["markdown"] } : undefined,
+    });
 
-		// Firecrawl v4 returns { web: [...], news: [...], images: [...] }
-		const webResults = response.web || [];
+    // Firecrawl v4 returns { web: [...], news: [...], images: [...] }
+    const webResults = response.web || [];
 
-		// Normalize results to our SearchResult type
-		// Handle union of SearchResultWeb | Document by checking for properties
-		return webResults.map((item) => {
-			// Type guard: SearchResultWeb has url, Document has sourceUrl
-			const url: string = "url" in item && typeof item.url === "string" 
-				? item.url 
-				: ("sourceUrl" in item && typeof item.sourceUrl === "string" ? item.sourceUrl : "");
-			const title = "title" in item ? item.title : undefined;
-			const description = "description" in item ? item.description : undefined;
-			const markdown = "markdown" in item ? item.markdown : undefined;
-			
-			return {
-				url: url || "",
-				title,
-				description,
-				markdown,
-			};
-		});
-	} catch (error) {
-		console.error(`Search error for query "${query}":`, error);
-		return [];
-	}
+    // Normalize results to our SearchResult type
+    // Handle union of SearchResultWeb | Document by checking for properties
+    return webResults.map((item) => {
+      // Type guard: SearchResultWeb has url, Document has sourceUrl
+      const url: string =
+        "url" in item && typeof item.url === "string"
+          ? item.url
+          : "sourceUrl" in item && typeof item.sourceUrl === "string"
+            ? item.sourceUrl
+            : "";
+      const title = "title" in item ? item.title : undefined;
+      const description = "description" in item ? item.description : undefined;
+      const markdown = "markdown" in item ? item.markdown : undefined;
+
+      return {
+        url: url || "",
+        title,
+        description,
+        markdown,
+      };
+    });
+  } catch (error) {
+    console.error(`Search error for query "${query}":`, error);
+    return [];
+  }
 }
 
 /**
@@ -78,37 +83,37 @@ export async function searchWeb(
  * @returns Results grouped by query
  */
 export async function searchWebBatch(
-	queries: string[],
-	options: {
-		limit?: number;
-		timeout?: number;
-		scrapeContent?: boolean;
-	} = {},
+  queries: string[],
+  options: {
+    limit?: number;
+    timeout?: number;
+    scrapeContent?: boolean;
+  } = {},
 ): Promise<Map<string, SearchResult[]>> {
-	const results = new Map<string, SearchResult[]>();
+  const results = new Map<string, SearchResult[]>();
 
-	await Promise.all(
-		queries.map((query) =>
-			limit(async () => {
-				const searchResults = await searchWeb(query, options);
-				results.set(query, searchResults);
-			}),
-		),
-	);
+  await Promise.all(
+    queries.map((query) =>
+      limit(async () => {
+        const searchResults = await searchWeb(query, options);
+        results.set(query, searchResults);
+      }),
+    ),
+  );
 
-	return results;
+  return results;
 }
 
 /**
  * Get the configured concurrency limit.
  */
 export function getConcurrencyLimit(): number {
-	return concurrencyLimit;
+  return concurrencyLimit;
 }
 
 /**
  * Create a rate limiter for custom use.
  */
 export function createRateLimiter(maxConcurrent?: number) {
-	return pLimit(maxConcurrent ?? concurrencyLimit);
+  return pLimit(maxConcurrent ?? concurrencyLimit);
 }
