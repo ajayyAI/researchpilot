@@ -1,12 +1,5 @@
 import { z } from "zod";
 
-export interface ResearchConfig {
-  query: string;
-  breadth: number;
-  depth: number;
-  combinedQuery?: string;
-}
-
 export interface ResearchProgress {
   currentDepth: number;
   totalDepth: number;
@@ -37,7 +30,6 @@ export const SerpQueriesSchema = z.object({
 });
 
 export type SerpQuery = z.infer<typeof SerpQuerySchema>;
-export type SerpQueries = z.infer<typeof SerpQueriesSchema>;
 
 export const LearningsSchema = z.object({
   learnings: z
@@ -50,8 +42,6 @@ export const LearningsSchema = z.object({
     .describe("Follow-up questions to research the topic further"),
 });
 
-export type Learnings = z.infer<typeof LearningsSchema>;
-
 export const ReportSchema = z.object({
   reportMarkdown: z
     .string()
@@ -59,8 +49,6 @@ export const ReportSchema = z.object({
       "Comprehensive research report in Markdown format with all learnings synthesized.",
     ),
 });
-
-export type Report = z.infer<typeof ReportSchema>;
 
 export const FeedbackSchema = z.object({
   questions: z
@@ -70,16 +58,9 @@ export const FeedbackSchema = z.object({
     ),
 });
 
-export type Feedback = z.infer<typeof FeedbackSchema>;
-
 export interface SearchResult {
   url: string;
   title?: string;
   description?: string;
   markdown?: string;
-}
-
-export interface SearchResponse {
-  success: boolean;
-  data: SearchResult[];
 }

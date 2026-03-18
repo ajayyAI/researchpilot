@@ -19,8 +19,8 @@ function Slider({
         ? value
         : Array.isArray(defaultValue)
           ? defaultValue
-          : [min, max],
-    [value, defaultValue, min, max],
+          : [min],
+    [value, defaultValue, min],
   );
 
   return (
@@ -31,22 +31,18 @@ function Slider({
       min={min}
       max={max}
       className={cn(
-        "relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col",
+        "relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50",
         className,
       )}
       {...props}
     >
       <SliderPrimitive.Track
         data-slot="slider-track"
-        className={cn(
-          "bg-white/10 relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5",
-        )}
+        className="bg-border relative grow overflow-hidden rounded-full h-1.5 w-full"
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
-          className={cn(
-            "bg-electric-blue absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full",
-          )}
+          className="bg-accent absolute h-full"
         />
       </SliderPrimitive.Track>
       {Array.from({ length: _values.length }, (_, index) => (
@@ -54,7 +50,7 @@ function Slider({
           data-slot="slider-thumb"
           // biome-ignore lint/suspicious/noArrayIndexKey: Slider thumbs are identified by index
           key={index}
-          className="border-white/50 ring-white/20 block size-5 shrink-0 rounded-full border-2 bg-white shadow-lg shadow-electric-blue/20 transition-[color,box-shadow,transform] hover:scale-110 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+          className="block size-4 shrink-0 rounded-full border-2 border-accent bg-bg-primary shadow-sm transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
         />
       ))}
     </SliderPrimitive.Root>

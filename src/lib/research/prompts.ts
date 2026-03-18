@@ -1,19 +1,15 @@
 export function getSystemPrompt(): string {
   const now = new Date().toISOString();
 
-  return `You are an expert researcher. Today is ${now}. Follow these instructions when responding:
+  return `You are an expert research analyst. Today is ${now}.
 
-- You may be asked to research subjects after your knowledge cutoff. Assume the user is correct when presented with recent information.
-- The user is a highly experienced analyst. Be as detailed as possible and ensure accuracy.
-- Be highly organized in your responses.
-- Suggest solutions and approaches the user may not have considered.
-- Be proactive and anticipate research needs.
-- Treat the user as an expert in all subject matter.
-- Mistakes erode trust, so be accurate and thorough.
-- Provide detailed explanations with specific data points.
-- Value good arguments over authorities - the source relevance matters less than the reasoning.
-- Consider new technologies and contrarian ideas, not just conventional wisdom.
-- You may speculate or predict when relevant, but clearly flag it as such.`;
+## Core Principles
+- Accuracy above all. Every claim must be grounded in the source material provided. Clearly distinguish verified facts from inference or speculation.
+- Be information-dense. Prefer specific data points, metrics, dates, and named entities over vague summaries.
+- Evaluate sources critically. Academic papers and primary sources carry more weight than blog posts or marketing content. Note when a finding comes from a single source vs. multiple corroborating sources.
+- The user is an experienced analyst. Write for an expert audience — no hand-holding, no filler.
+- Consider contrarian and emerging perspectives, not just conventional wisdom.
+- When speculating or inferring beyond the source material, explicitly flag it as such.`;
 }
 
 export function getSerpQueryPrompt(
@@ -22,15 +18,14 @@ export function getSerpQueryPrompt(
   learnings?: string[],
 ): string {
   const learningsContext = learnings?.length
-    ? `\n\nHere are learnings from previous research. Use them to generate more specific and targeted queries:\n${learnings.join("\n")}`
+    ? `\n\nPrevious research findings (use these to generate more targeted, non-redundant queries):\n${learnings.map((l) => `- ${l}`).join("\n")}`
     : "";
 
-  return `Given the following research prompt from the user, generate a list of SERP queries to research the topic effectively.
+  return `Generate up to ${numQueries} search queries to research the following topic. Each query should explore a distinct angle — avoid overlap.
 
-Return a maximum of ${numQueries} queries, but return fewer if the original prompt is clear enough.
-Each query must be unique and explore different aspects of the topic.
+For each query, include a researchGoal explaining what specific information this query aims to uncover and how it advances the overall research.
 
-<prompt>${query}</prompt>${learningsContext}`;
+<topic>${query}</topic>${learningsContext}`;
 }
 
 export function getLearningsPrompt(
@@ -43,20 +38,18 @@ export function getLearningsPrompt(
     .map((content) => `<content>\n${content}\n</content>`)
     .join("\n");
 
-  return `Given the following contents from a SERP search for the query <query>${query}</query>, extract key learnings.
+  return `Analyze the following search results for the query "${query}" and extract key findings.
 
-Requirements for learnings:
-- Return a maximum of ${numLearnings} learnings, but fewer if the content is limited
-- Each learning must be unique and not overlap with others
-- Be concise but information-dense
-- Include specific entities (people, places, companies, products)
-- Include exact metrics, numbers, dates, and statistics when available
-- These learnings will be used to guide further research
+## Requirements for learnings
+- Extract up to ${numLearnings} learnings. Fewer is fine if the content is thin.
+- Each learning must be a unique, non-overlapping insight.
+- Be specific: include exact names, numbers, dates, percentages, and metrics when available.
+- Assess source quality: note if a finding is from a primary source, peer-reviewed research, industry report, or opinion piece.
+- If multiple sources corroborate a finding, note that — it increases confidence.
 
-Requirements for follow-up questions:
-- Generate up to ${numFollowUpQuestions} follow-up questions
-- Questions should identify gaps in the current research
-- Focus on unexplored aspects of the topic
+## Requirements for follow-up questions
+- Generate up to ${numFollowUpQuestions} follow-up questions that would fill gaps in the current research.
+- Focus on areas where the current results are thin, contradictory, or raise new questions.
 
 <contents>${contentsStr}</contents>`;
 }
@@ -66,32 +59,33 @@ export function getReportPrompt(query: string, learnings: string[]): string {
     .map((learning) => `<learning>\n${learning}\n</learning>`)
     .join("\n");
 
-  return `Given the following research prompt and accumulated learnings, write a comprehensive research report.
+  return `Write a comprehensive research report based on the following topic and accumulated findings.
 
-Requirements:
-- Be as detailed as possible, aim for 3+ pages of content
-- Include ALL learnings from the research
-- Organize information logically with clear sections
-- Use proper Markdown formatting with headers, lists, and emphasis
-- Synthesize information across sources, don't just list facts
-- Draw conclusions and identify patterns where appropriate
+## Report Requirements
+- Synthesize all findings into a coherent narrative — don't just list facts.
+- Use clear Markdown structure: title, sections with headers, bullet points for key data.
+- Where multiple sources agree on a point, state the consensus. Where sources conflict, note the disagreement.
+- Draw conclusions and identify patterns across the findings.
+- Include a "Key Takeaways" section at the end with the most important 3-5 insights.
+- Cite source URLs inline where relevant using markdown links.
 
-<prompt>${query}</prompt>
+<topic>${query}</topic>
 
-<learnings>
+<findings>
 ${learningsStr}
-</learnings>`;
+</findings>`;
 }
 
 export function getFeedbackPrompt(query: string, numQuestions: number): string {
-  return `Given the following research query from the user, generate clarifying follow-up questions to better understand their research needs.
+  return `Given the following research query, generate up to ${numQuestions} clarifying questions that would help narrow the scope and improve research quality.
 
-Return a maximum of ${numQuestions} questions, but fewer if the query is already clear and specific.
-Questions should help narrow down:
-- Scope and boundaries of the research
-- Specific aspects the user cares about most
-- Time period or recency requirements
-- Depth of technical detail needed
+Focus on:
+- Scope and boundaries (time period, geography, industry)
+- Specific aspects the user likely cares about most
+- Level of technical depth needed
+- Any ambiguity in the query that could lead to unfocused research
+
+Return fewer questions if the query is already clear and specific.
 
 <query>${query}</query>`;
 }

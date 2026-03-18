@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, ExternalLink, FileText } from "lucide-react";
+import { Check, Copy, Download, ExternalLink, FileText } from "lucide-react";
 import { useCallback, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
@@ -9,84 +9,117 @@ interface ResearchReportProps {
   report: string;
   learningsCount: number;
   sourcesCount: number;
+  query: string;
 }
 
 export function ResearchReport({
   report,
   learningsCount,
   sourcesCount,
+  query,
 }: ResearchReportProps) {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = useCallback(async () => {
-    await navigator.clipboard.writeText(report);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(report);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API unavailable
+    }
   }, [report]);
 
+  const downloadMarkdown = useCallback(() => {
+    const slug = query
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 60);
+    const filename = `research-${slug || "report"}.md`;
+    const blob = new Blob([report], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [report, query]);
+
   return (
-    <div className="glass-card rounded-3xl overflow-hidden border border-white/10">
-      <div className="bg-white/5 border-b border-white/5 px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="size-10 rounded-xl bg-electric-blue/20 flex items-center justify-center text-electric-blue border border-electric-blue/30">
-            <FileText className="size-5" />
+    <div className="surface rounded-xl overflow-hidden">
+      <div className="bg-bg-elevated/50 border-b border-border px-5 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="size-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+            <FileText className="size-4" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">
+            <h3 className="text-sm font-medium text-text-primary">
               Research Report
             </h3>
-            <div className="flex gap-4 text-xs text-text-secondary mt-1">
-              <span>{learningsCount} Key Findings</span>
-              <span className="text-white/20">•</span>
-              <span>{sourcesCount} Sources</span>
+            <div className="flex gap-2 text-xs text-text-muted mt-0.5">
+              <span>{learningsCount} findings</span>
+              <span>|</span>
+              <span>{sourcesCount} sources</span>
             </div>
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={copyToClipboard}
-          className="border-white/10 hover:bg-white/5"
-        >
-          {copied ? (
-            <>
-              <Check className="size-4 mr-2 text-green-400" />
-              <span className="text-green-400">Copied</span>
-            </>
-          ) : (
-            <>
-              <Copy className="size-4 mr-2" />
-              <span>Copy Report</span>
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={downloadMarkdown}
+            className="text-text-muted"
+          >
+            <Download className="size-3.5" />
+            <span className="hidden sm:inline">.md</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={copyToClipboard}>
+            {copied ? (
+              <>
+                <Check className="size-3.5 text-success" />
+                <span className="text-success">Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="size-3.5" />
+                <span>Copy</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      <div className="p-8 md:p-12">
+      <div className="p-5 md:p-8">
         <div
-          className="prose prose-invert max-w-none 
-            prose-headings:text-white prose-headings:font-medium prose-headings:tracking-tight 
-            prose-p:text-text-secondary prose-p:leading-relaxed 
-            prose-a:text-electric-blue prose-a:no-underline hover:prose-a:underline
-            prose-strong:text-white prose-strong:font-semibold
-            prose-ul:text-text-secondary prose-li:marker:text-electric-blue/50
-            prose-code:bg-white/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-white prose-code:font-mono prose-code:text-sm
-            prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl"
+          className="prose prose-invert prose-sm max-w-none
+            prose-headings:text-text-primary prose-headings:font-semibold prose-headings:tracking-tight
+            prose-p:text-text-secondary prose-p:leading-relaxed
+            prose-a:text-accent prose-a:no-underline hover:prose-a:underline
+            prose-strong:text-text-primary prose-strong:font-semibold
+            prose-ul:text-text-secondary prose-li:marker:text-accent/40
+            prose-code:bg-bg-elevated prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-text-primary prose-code:font-mono prose-code:text-xs
+            prose-pre:bg-bg-primary prose-pre:border prose-pre:border-border prose-pre:rounded-lg"
         >
           <ReactMarkdown
             components={{
-              a: ({ href, children }) => (
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-electric-blue hover:text-electric-blue/80 transition-colors"
-                >
-                  {children}
-                  <ExternalLink className="size-3" />
-                </a>
-              ),
+              a: ({ href, children }) => {
+                const isSafe =
+                  href?.startsWith("http://") || href?.startsWith("https://");
+                if (!isSafe) return <span>{children}</span>;
+                return (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-accent hover:text-accent/80 transition-colors"
+                  >
+                    {children}
+                    <ExternalLink className="size-3" />
+                  </a>
+                );
+              },
             }}
           >
             {report}

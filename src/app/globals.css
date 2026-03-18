@@ -1,27 +1,25 @@
 @import "tailwindcss";
 
 @theme {
-  --color-deep-void: #030305;
-  --color-electric-blue: #3b82f6;
-  --color-cyber-purple: #8b5cf6;
-  --color-off-white: #f8fafc;
-  --color-void-border: rgba(255, 255, 255, 0.08);
-
-  --color-bg-primary: var(--color-deep-void);
-  --color-bg-secondary: #0a0a0f;
-  --color-text-primary: var(--color-off-white);
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
-  --color-charcoal: #1a1a2e;
-  --color-neon-purple: #a855f7;
+  --color-bg-primary: #1a1a1a;
+  --color-bg-secondary: #2a2a2a;
+  --color-bg-surface: #232323;
+  --color-bg-elevated: #303030;
+  --color-text-primary: #ececec;
+  --color-text-secondary: #a0a0a0;
+  --color-text-muted: #6b6b6b;
+  --color-accent: #d97706;
+  --color-accent-muted: rgba(217, 119, 6, 0.15);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-active: rgba(255, 255, 255, 0.16);
+  --color-success: #22c55e;
+  --color-error: #ef4444;
 
   --font-sans: var(--font-dm-sans), system-ui, -apple-system, sans-serif;
   --font-heading:
     var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
 
-  --animate-fade-in: fade-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  --animate-slide-up: slide-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  --animate-scale-in: scale-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  --animate-fade-in: fade-in 0.3s ease-out forwards;
 
   @keyframes fade-in {
     0% {
@@ -31,35 +29,12 @@
       opacity: 1;
     }
   }
-
-  @keyframes slide-up {
-    0% {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes scale-in {
-    0% {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
 }
 
 @layer base {
   html {
-    scroll-behavior: smooth;
-    background-color: var(--color-deep-void);
-    color: var(--color-off-white);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
   }
 
   body {
@@ -83,75 +58,21 @@
   }
 
   ::selection {
-    background-color: rgba(59, 130, 246, 0.2);
-    color: var(--color-electric-blue);
+    background-color: var(--color-accent-muted);
+    color: var(--color-accent);
   }
 }
 
 @layer utilities {
-  .glass {
-    @apply bg-white/3 backdrop-blur-xl border border-white/5;
+  .surface {
+    @apply bg-bg-surface border border-border;
   }
 
-  .glass-card {
-    @apply bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl;
-  }
-
-  .text-glow {
-    text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  .surface-elevated {
+    @apply bg-bg-elevated border border-border;
   }
 
   .focus-ring {
-    @apply outline-none focus-visible:ring-2 focus-visible:ring-electric-blue/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary;
-  }
-
-  .container-width {
-    @apply max-w-7xl mx-auto px-6 sm:px-8;
-  }
-
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-linear-to-r from-electric-blue to-cyber-purple;
-  }
-
-  .text-display {
-    font-size: clamp(3rem, 8vw, 7rem);
-    font-weight: 900;
-    line-height: 0.95;
-    letter-spacing: -0.04em;
-    font-family: var(--font-heading);
-  }
-
-  .text-h1 {
-    font-size: clamp(2.5rem, 6vw, 4.5rem);
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-    font-family: var(--font-heading);
-  }
-
-  .text-h2 {
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    font-family: var(--font-heading);
-  }
-
-  .text-h3 {
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-    font-family: var(--font-heading);
-  }
-
-  .text-body-lg {
-    font-size: 1.25rem;
-    line-height: 1.6;
-    font-weight: 300;
-  }
-
-  .section {
-    @apply py-24 md:py-32;
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary;
   }
 }

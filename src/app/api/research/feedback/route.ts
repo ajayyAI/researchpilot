@@ -5,31 +5,24 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { query, numQuestions = 3 } = body;
 
-    if (!query || typeof query !== "string") {
+    if (!query || typeof query !== "string" || query.trim().length === 0) {
       return Response.json(
-        { error: "Query is required and must be a string" },
+        { error: "Query is required and must be a non-empty string" },
         { status: 400 },
       );
     }
 
-    const questions = await generateFeedback(
-      query,
-      Math.min(Math.max(numQuestions, 1), 5),
+    const safeNumQuestions = Math.min(
+      Math.max(Number(numQuestions) || 3, 1),
+      5,
     );
+    const questions = await generateFeedback(query, safeNumQuestions);
 
-    return Response.json({
-      success: true,
-      questions,
-    });
+    return Response.json({ success: true, questions });
   } catch (error) {
     console.error("Feedback generation error:", error);
     return Response.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to generate feedback",
-      },
+      { error: "Failed to generate feedback" },
       { status: 500 },
     );
   }

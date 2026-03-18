@@ -1,5 +1,4 @@
 import Firecrawl, { type SearchData } from "@mendable/firecrawl-js";
-import pLimit from "p-limit";
 
 import type { SearchResult } from "./types";
 
@@ -19,7 +18,6 @@ function getFirecrawl(): Firecrawl {
 }
 
 const concurrencyLimit = Number(process.env.FIRECRAWL_CONCURRENCY) || 2;
-const limit = pLimit(concurrencyLimit);
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -59,16 +57,12 @@ export async function searchWeb(
             : "sourceUrl" in item && typeof item.sourceUrl === "string"
               ? item.sourceUrl
               : "";
-        const title = "title" in item ? item.title : undefined;
-        const description =
-          "description" in item ? item.description : undefined;
-        const markdown = "markdown" in item ? item.markdown : undefined;
 
         return {
           url: url || "",
-          title,
-          description,
-          markdown,
+          title: "title" in item ? item.title : undefined,
+          description: "description" in item ? item.description : undefined,
+          markdown: "markdown" in item ? item.markdown : undefined,
         };
       });
     } catch (error) {
@@ -83,51 +77,19 @@ export async function searchWeb(
 
       if (isRateLimitError && attempt < maxRetries - 1) {
         const waitTime = 15000 * 2 ** attempt;
-        console.log(
-          `Rate limited on "${query}", waiting ${waitTime / 1000}s before retry (attempt ${attempt + 1}/${maxRetries})`,
-        );
         await sleep(waitTime);
         continue;
       }
 
-      console.error(`Search error for query "${query}":`, error);
+      console.error(`Search error for "${query}":`, lastError.message);
       return [];
     }
   }
 
-  console.error(
-    `Search failed after ${maxRetries} retries for "${query}":`,
-    lastError,
-  );
+  console.error(`Search failed after ${maxRetries} retries for "${query}"`);
   return [];
-}
-
-export async function searchWebBatch(
-  queries: string[],
-  options: {
-    limit?: number;
-    timeout?: number;
-    scrapeContent?: boolean;
-  } = {},
-): Promise<Map<string, SearchResult[]>> {
-  const results = new Map<string, SearchResult[]>();
-
-  await Promise.all(
-    queries.map((query) =>
-      limit(async () => {
-        const searchResults = await searchWeb(query, options);
-        results.set(query, searchResults);
-      }),
-    ),
-  );
-
-  return results;
 }
 
 export function getConcurrencyLimit(): number {
   return concurrencyLimit;
-}
-
-export function createRateLimiter(maxConcurrent?: number) {
-  return pLimit(maxConcurrent ?? concurrencyLimit);
 }

@@ -37,7 +37,6 @@ async function generateSerpQueries(
     return [];
   }
 
-  console.log(`Generated ${output.queries.length} SERP queries`);
   return output.queries.slice(0, numQueries);
 }
 
@@ -73,7 +72,6 @@ async function processSearchResults(
     return { learnings: [], followUpQuestions: [] };
   }
 
-  console.log(`Extracted ${output.learnings.length} learnings from "${query}"`);
   return output;
 }
 
@@ -81,6 +79,7 @@ export async function deepResearch({
   query,
   breadth,
   depth,
+  totalDepth,
   learnings = [],
   visitedUrls = [],
   onProgress,
@@ -88,13 +87,16 @@ export async function deepResearch({
   query: string;
   breadth: number;
   depth: number;
+  totalDepth?: number;
   learnings?: string[];
   visitedUrls?: string[];
   onProgress?: (progress: ResearchProgress) => void;
 }): Promise<ResearchResult> {
+  const rootTotalDepth = totalDepth ?? depth;
+
   const progress: ResearchProgress = {
     currentDepth: depth,
-    totalDepth: depth,
+    totalDepth: rootTotalDepth,
     currentBreadth: breadth,
     totalBreadth: breadth,
     totalQueries: 0,
@@ -127,14 +129,9 @@ export async function deepResearch({
           });
 
           const newUrls = searchResults.map((r) => r.url).filter((url) => url);
-
           const contents = searchResults
             .map((r) => r.markdown)
             .filter((c): c is string => !!c);
-
-          console.log(
-            `Search "${serpQuery.query}" returned ${contents.length} contents`,
-          );
 
           const newBreadth = Math.ceil(breadth / 2);
           const newDepth = depth - 1;
@@ -150,10 +147,6 @@ export async function deepResearch({
           const allUrls = [...visitedUrls, ...newUrls];
 
           if (newDepth > 0) {
-            console.log(
-              `Researching deeper: breadth=${newBreadth}, depth=${newDepth}`,
-            );
-
             reportProgress({
               currentDepth: newDepth,
               currentBreadth: newBreadth,
@@ -171,6 +164,7 @@ Follow-up research directions: ${processed.followUpQuestions.map((q) => `\n- ${q
               query: nextQuery,
               breadth: newBreadth,
               depth: newDepth,
+              totalDepth: rootTotalDepth,
               learnings: allLearnings,
               visitedUrls: allUrls,
               onProgress,
@@ -189,22 +183,11 @@ Follow-up research directions: ${processed.followUpQuestions.map((q) => `\n- ${q
             visitedUrls: allUrls,
           };
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-
-          if (errorMessage.includes("Timeout")) {
-            console.error(`Timeout for query "${serpQuery.query}"`);
-          } else {
-            console.error(
-              `Error for query "${serpQuery.query}":`,
-              errorMessage,
-            );
-          }
-
-          return {
-            learnings: [],
-            visitedUrls: [],
-          };
+          console.error(
+            `Research error for "${serpQuery.query}":`,
+            error instanceof Error ? error.message : error,
+          );
+          return { learnings: [], visitedUrls: [] };
         }
       }),
     ),
@@ -235,6 +218,5 @@ export async function generateReport(
   }
 
   const sourcesSection = `\n\n## Sources\n\n${visitedUrls.map((url) => `- ${url}`).join("\n")}`;
-
   return output.reportMarkdown + sourcesSection;
 }

@@ -21,6 +21,9 @@ export async function POST(request: Request) {
       );
     }
 
+    const safeBreadth = Math.min(Math.max(Number(breadth) || 4, 1), 10);
+    const safeDepth = Math.min(Math.max(Number(depth) || 2, 1), 5);
+
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
@@ -38,8 +41,8 @@ export async function POST(request: Request) {
 
           const result = await deepResearch({
             query,
-            breadth: Math.min(Math.max(breadth, 1), 10),
-            depth: Math.min(Math.max(depth, 1), 5),
+            breadth: safeBreadth,
+            depth: safeDepth,
             onProgress: (progress) => {
               sendEvent("progress", progress);
             },
@@ -69,9 +72,7 @@ export async function POST(request: Request) {
           controller.close();
         } catch (error) {
           console.error("Research error:", error);
-          sendEvent("error", {
-            error: error instanceof Error ? error.message : "Research failed",
-          });
+          sendEvent("error", { error: "Research failed. Please try again." });
           controller.close();
         }
       },
@@ -85,13 +86,7 @@ export async function POST(request: Request) {
         "X-Accel-Buffering": "no",
       },
     });
-  } catch (error) {
-    console.error("API error:", error);
-    return Response.json(
-      {
-        error: error instanceof Error ? error.message : "Internal server error",
-      },
-      { status: 500 },
-    );
+  } catch {
+    return Response.json({ error: "Invalid request" }, { status: 400 });
   }
 }

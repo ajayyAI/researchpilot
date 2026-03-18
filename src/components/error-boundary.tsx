@@ -33,8 +33,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="min-h-[400px] flex items-center justify-center p-8">
-          <div className="glass-card rounded-2xl p-8 max-w-md text-center space-y-4">
-            <h2 className="text-xl font-semibold text-white">
+          <div className="surface rounded-xl p-8 max-w-md text-center space-y-4">
+            <h2 className="text-lg font-semibold text-text-primary">
               Something went wrong
             </h2>
             <p className="text-sm text-text-secondary">
