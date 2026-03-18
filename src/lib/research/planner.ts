@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai";
 import { getSystemPrompt } from "./prompts";
-import { getModel } from "./providers";
+import { getModel, throttledGenerate } from "./providers";
 import { type ResearchPlan, ResearchPlanSchema } from "./types";
 
 export async function generateResearchPlan(
@@ -9,15 +9,17 @@ export async function generateResearchPlan(
 ): Promise<ResearchPlan> {
   const prompt = getPlanningPrompt(query, feedbackAnswers);
 
-  const { output } = await generateText({
-    model: getModel("strategic"),
-    system: getSystemPrompt(),
-    prompt,
-    output: Output.object({
-      schema: ResearchPlanSchema,
+  const { output } = await throttledGenerate("strategic", () =>
+    generateText({
+      model: getModel("strategic"),
+      system: getSystemPrompt(),
+      prompt,
+      output: Output.object({
+        schema: ResearchPlanSchema,
+      }),
+      abortSignal: AbortSignal.timeout(60_000),
     }),
-    abortSignal: AbortSignal.timeout(60_000),
-  });
+  );
 
   if (!output) {
     return createFallbackPlan(query);

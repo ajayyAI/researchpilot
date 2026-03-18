@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai";
 import { getSystemPrompt } from "./prompts";
-import { getModel } from "./providers";
+import { getModel, throttledGenerate } from "./providers";
 import { BatchSourceAssessmentSchema, type SourceRecord } from "./types";
 
 const DOMAIN_SCORES: Record<string, number> = {
@@ -112,6 +112,7 @@ ${sourcesList}`;
 
 export async function assessSources(
   results: Array<{ url: string; title: string; snippet: string }>,
+  signal?: AbortSignal,
 ): Promise<SourceRecord[]> {
   if (results.length === 0) return [];
 
@@ -152,15 +153,19 @@ export async function assessSources(
     try {
       const prompt = getSourceAssessmentPrompt(needsLlmAssessment);
 
-      const { output } = await generateText({
-        model: getModel("fast"),
-        system: getSystemPrompt(),
-        prompt,
-        output: Output.object({
-          schema: BatchSourceAssessmentSchema,
+      const { output } = await throttledGenerate("fast", () =>
+        generateText({
+          model: getModel("fast"),
+          system: getSystemPrompt(),
+          prompt,
+          output: Output.object({
+            schema: BatchSourceAssessmentSchema,
+          }),
+          abortSignal: signal
+            ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+            : AbortSignal.timeout(30_000),
         }),
-        abortSignal: AbortSignal.timeout(30_000),
-      });
+      );
 
       if (output?.assessments) {
         for (

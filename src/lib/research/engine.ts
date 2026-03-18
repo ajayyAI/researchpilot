@@ -1,7 +1,7 @@
 import { generateText, Output } from "ai";
 import pLimit from "p-limit";
 import { getSystemPrompt } from "./prompts";
-import { getModel } from "./providers";
+import { getModel, throttledGenerate } from "./providers";
 import {
   addContradiction,
   addFinding,
@@ -52,13 +52,12 @@ export async function orchestrate({
   let state = createResearchState(query, plan);
   const limit = pLimit(MAX_CONCURRENT_WORKERS);
   let aspectsComplete = 0;
-  let currentAspectName: string | undefined;
 
-  const emitProgress = (status: string) => {
+  const emitProgress = (status: string, aspectName?: string) => {
     onProgress?.({
       totalQueries: plan.estimatedSearches,
       completedQueries: aspectsComplete,
-      currentAspect: currentAspectName,
+      currentAspect: aspectName,
       aspectsComplete,
       aspectsTotal: plan.aspects.length,
       findingsCount: state.findings.length,
@@ -73,8 +72,7 @@ export async function orchestrate({
     limit(async () => {
       signal?.throwIfAborted();
 
-      currentAspectName = aspect.topic;
-      emitProgress(`Exploring: ${aspect.topic}`);
+      emitProgress(`Exploring: ${aspect.topic}`, aspect.topic);
 
       return {
         aspect,
@@ -84,7 +82,7 @@ export async function orchestrate({
           signal,
           onFinding,
           onSource,
-          onProgress: (status) => emitProgress(status),
+          onProgress: (status) => emitProgress(status, aspect.topic),
         }),
       };
     }),
@@ -92,14 +90,25 @@ export async function orchestrate({
 
   const settled = await Promise.allSettled(workerTasks);
 
-  for (const outcome of settled) {
-    if (outcome.status !== "fulfilled") continue;
+  for (let i = 0; i < settled.length; i++) {
+    const outcome = settled[i];
+    if (outcome.status === "rejected") {
+      const aspect = plan.aspects[i];
+      const reason =
+        outcome.reason instanceof Error
+          ? outcome.reason.message
+          : String(outcome.reason);
+      console.error(`Worker failed for "${aspect.topic}":`, reason);
+      emitProgress(`Failed: ${aspect.topic} — ${reason}`, aspect.topic);
+      continue;
+    }
     const { aspect, result } = outcome.value;
     state = mergeWorkerResult(state, aspect, result);
     aspectsComplete++;
     onAspectComplete?.(aspect.id, result);
     emitProgress(
       `Done with ${aspect.topic} — ${result.findings.length} findings`,
+      aspect.topic,
     );
   }
 
@@ -117,8 +126,7 @@ export async function orchestrate({
       limit(async () => {
         signal?.throwIfAborted();
 
-        currentAspectName = aspect.topic;
-        emitProgress(`Going deeper on ${aspect.topic}`);
+        emitProgress(`Going deeper on ${aspect.topic}`, aspect.topic);
 
         return {
           aspect,
@@ -128,7 +136,7 @@ export async function orchestrate({
             signal,
             onFinding,
             onSource,
-            onProgress: (status) => emitProgress(status),
+            onProgress: (status) => emitProgress(status, aspect.topic),
           }),
         };
       }),
@@ -137,7 +145,7 @@ export async function orchestrate({
     const gapSettled = await Promise.allSettled(gapTasks);
 
     for (const outcome of gapSettled) {
-      if (outcome.status !== "fulfilled") continue;
+      if (outcome.status === "rejected") continue;
       const { aspect, result } = outcome.value;
       state = mergeWorkerResult(state, aspect, result);
       onAspectComplete?.(aspect.id, result);
@@ -188,7 +196,7 @@ function mergeWorkerResult(
 function findGaps(state: ResearchState): PlanAspect[] {
   return state.plan.aspects.filter((aspect) => {
     const status = state.coverageMap.get(aspect.id);
-    return status === "missing";
+    return status === "missing" || status === "partial";
   });
 }
 
@@ -213,21 +221,23 @@ async function detectContradictions(
     const claimsList = findings.map((f, i) => `[${i}] ${f.claim}`).join("\n");
 
     try {
-      const { output } = await generateText({
-        model: getModel("fast"),
-        system: getSystemPrompt(),
-        prompt: `Review the following research findings from the same topic area and identify any contradictions — pairs of claims that assert conflicting or incompatible things.
+      const { output } = await throttledGenerate("fast", () =>
+        generateText({
+          model: getModel("fast"),
+          system: getSystemPrompt(),
+          prompt: `Review the following research findings from the same topic area and identify any contradictions — pairs of claims that assert conflicting or incompatible things.
 
 <findings>
 ${claimsList}
 </findings>
 
 Only flag genuine factual contradictions, not complementary findings or findings about different sub-topics. Return an empty array if there are no contradictions.`,
-        output: Output.object({ schema: ContradictionCheckSchema }),
-        abortSignal: signal
-          ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
-          : AbortSignal.timeout(30_000),
-      });
+          output: Output.object({ schema: ContradictionCheckSchema }),
+          abortSignal: signal
+            ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+            : AbortSignal.timeout(30_000),
+        }),
+      );
 
       if (output?.contradictions) {
         for (const c of output.contradictions) {

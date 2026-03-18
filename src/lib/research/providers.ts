@@ -2,6 +2,7 @@ import { createGroq } from "@ai-sdk/groq";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
+import { Throttle } from "./throttle";
 
 export type ModelTier = "fast" | "smart" | "strategic";
 type Provider = "openai" | "groq" | "openrouter";
@@ -18,9 +19,9 @@ const DEFAULT_MODELS: Record<Provider, Record<ModelTier, string>> = {
     strategic: "meta-llama/llama-4-scout-17b-16e-instruct",
   },
   openrouter: {
-    fast: "mistralai/mistral-small-3.1-24b-instruct:free",
+    fast: "google/gemma-3-27b-it:free",
     smart: "meta-llama/llama-3.3-70b-instruct:free",
-    strategic: "meta-llama/llama-3.3-70b-instruct:free",
+    strategic: "qwen/qwen3-coder:free",
   },
 };
 
@@ -102,4 +103,21 @@ export function getModel(tier?: ModelTier): LanguageModel {
   const provider = getProvider();
   const modelId = getModelIdForTier(tier ?? "smart", provider);
   return getProviderClient(provider)(modelId) as LanguageModel;
+}
+
+const freeTierThrottle = new Throttle(
+  Number(process.env.LLM_MIN_INTERVAL_MS) || 3000,
+);
+
+function isFreeTier(tier: ModelTier): boolean {
+  const provider = getProvider();
+  if (provider !== "openrouter") return false;
+  return getModelIdForTier(tier, provider).endsWith(":free");
+}
+
+export function throttledGenerate<T>(
+  tier: ModelTier,
+  fn: () => Promise<T>,
+): Promise<T> {
+  return isFreeTier(tier) ? freeTierThrottle.run(fn) : fn();
 }

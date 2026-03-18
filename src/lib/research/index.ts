@@ -5,7 +5,7 @@ export { generateFeedback } from "./feedback";
 export type { GainDecision, GainResult } from "./gain";
 export { computeInformationGain, GAIN_HIGH, GAIN_NORMAL } from "./gain";
 export { createFallbackPlan, generateResearchPlan } from "./planner";
-export { getModel } from "./providers";
+export { getModel, throttledGenerate } from "./providers";
 export { generateReport } from "./report-pipeline";
 export { multiSearch, searchWeb } from "./search";
 export type { SerializedResearchState } from "./state";

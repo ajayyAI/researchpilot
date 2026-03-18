@@ -4,7 +4,7 @@ import { z } from "zod";
 import { assessSources } from "./credibility";
 import { computeInformationGain } from "./gain";
 import { getSystemPrompt } from "./prompts";
-import { getModel } from "./providers";
+import { getModel, throttledGenerate } from "./providers";
 import { getConcurrencyLimit, multiSearch } from "./search";
 import { trimPrompt } from "./text-utils";
 import {
@@ -143,7 +143,7 @@ async function research(
           title: r.title ?? r.url,
           snippet: r.description ?? r.markdown?.slice(0, 500) ?? "",
         }));
-        const assessed = await assessSources(sourceInputs);
+        const assessed = await assessSources(sourceInputs, options.signal);
         for (const src of assessed) {
           roundSources.push(src);
           options.onSource?.(src);
@@ -179,7 +179,11 @@ async function research(
     ...accumulated.filter((f) => !roundFindings.includes(f)),
   ];
 
-  const gain = await computeInformationGain(roundFindings, existingForGain);
+  const gain = await computeInformationGain(
+    roundFindings,
+    existingForGain,
+    options.signal,
+  );
 
   switch (gain.decision) {
     case "go-deeper":
@@ -250,15 +254,17 @@ ${learningsContext}${prevQueriesContext}
 Each query should target a specific sub-question or angle. Avoid overlap between queries.`;
 
   try {
-    const { output } = await generateText({
-      model: getModel("fast"),
-      system: getSystemPrompt(),
-      prompt,
-      output: Output.object({ schema: SerpQueriesSchema }),
-      abortSignal: signal
-        ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
-        : AbortSignal.timeout(30_000),
-    });
+    const { output } = await throttledGenerate("fast", () =>
+      generateText({
+        model: getModel("fast"),
+        system: getSystemPrompt(),
+        prompt,
+        output: Output.object({ schema: SerpQueriesSchema }),
+        abortSignal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+          : AbortSignal.timeout(30_000),
+      }),
+    );
 
     if (!output) return aspect.subQuestions.slice(0, numQueries);
     return output.queries.map((q) => q.query).slice(0, numQueries);
@@ -298,15 +304,17 @@ For each finding:
 <contents>${contentsStr}</contents>`;
 
   try {
-    const { output } = await generateText({
-      model: getModel("fast"),
-      system: getSystemPrompt(),
-      prompt,
-      output: Output.object({ schema: FindingsExtractionSchema }),
-      abortSignal: signal
-        ? AbortSignal.any([signal, AbortSignal.timeout(60_000)])
-        : AbortSignal.timeout(60_000),
-    });
+    const { output } = await throttledGenerate("fast", () =>
+      generateText({
+        model: getModel("fast"),
+        system: getSystemPrompt(),
+        prompt,
+        output: Output.object({ schema: FindingsExtractionSchema }),
+        abortSignal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(60_000)])
+          : AbortSignal.timeout(60_000),
+      }),
+    );
 
     if (!output) return [];
 

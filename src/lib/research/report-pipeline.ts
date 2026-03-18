@@ -2,7 +2,7 @@ import { generateText, Output } from "ai";
 import pLimit from "p-limit";
 import { z } from "zod";
 import { getSystemPrompt } from "./prompts";
-import { getModel } from "./providers";
+import { getModel, throttledGenerate } from "./providers";
 import { getRelevantFindings } from "./state";
 import { trimPrompt } from "./text-utils";
 import {
@@ -83,13 +83,15 @@ Total findings: ${state.findings.length}
 
 Return a title and 3-7 sections. Each section should list the plan aspect IDs it draws from and the key points it should cover. Order sections for narrative flow.`;
 
-  const { output } = await generateText({
-    model: getModel("smart"),
-    system: getSystemPrompt(),
-    prompt: trimPrompt(prompt),
-    output: Output.object({ schema: ReportOutlineSchema }),
-    abortSignal: makeSignal(signal),
-  });
+  const { output } = await throttledGenerate("smart", () =>
+    generateText({
+      model: getModel("smart"),
+      system: getSystemPrompt(),
+      prompt: trimPrompt(prompt),
+      output: Output.object({ schema: ReportOutlineSchema }),
+      abortSignal: makeSignal(signal),
+    }),
+  );
 
   if (!output) {
     return {
@@ -140,18 +142,28 @@ ${sourcesContext}
 
 Write in expert analytical prose. Use inline markdown links to cite sources where relevant. Include specific data points, metrics, and named entities. Do not include a section heading — it will be added during assembly.`;
 
-      const { output } = await generateText({
-        model: getModel("smart"),
-        system: getSystemPrompt(),
-        prompt: trimPrompt(prompt),
-        output: Output.object({ schema: ReportSectionSchema }),
-        abortSignal: makeSignal(events?.signal),
-      });
+      try {
+        const { output } = await throttledGenerate("smart", () =>
+          generateText({
+            model: getModel("smart"),
+            system: getSystemPrompt(),
+            prompt: trimPrompt(prompt),
+            output: Output.object({ schema: ReportSectionSchema }),
+            abortSignal: makeSignal(events?.signal),
+          }),
+        );
 
-      const markdown =
-        output?.sectionMarkdown ?? `*No content generated for this section.*`;
-      results.set(section.id, markdown);
-      events?.onSection?.(section.id, markdown);
+        const markdown =
+          output?.sectionMarkdown ?? `*No content generated for this section.*`;
+        results.set(section.id, markdown);
+        events?.onSection?.(section.id, markdown);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError")
+          throw error;
+        const fallback = `*Section generation failed. ${findings.length} findings were collected but could not be synthesized.*`;
+        results.set(section.id, fallback);
+        events?.onSection?.(section.id, fallback);
+      }
     }),
   );
 
@@ -193,13 +205,15 @@ Return a JSON object with "introduction" and "conclusion" fields, both as markdo
     conclusion: z.string(),
   });
 
-  const { output } = await generateText({
-    model: getModel("smart"),
-    system: getSystemPrompt(),
-    prompt: trimPrompt(prompt),
-    output: Output.object({ schema: IntroConclSchema }),
-    abortSignal: makeSignal(signal),
-  });
+  const { output } = await throttledGenerate("smart", () =>
+    generateText({
+      model: getModel("smart"),
+      system: getSystemPrompt(),
+      prompt: trimPrompt(prompt),
+      output: Output.object({ schema: IntroConclSchema }),
+      abortSignal: makeSignal(signal),
+    }),
+  );
 
   return {
     intro: output?.introduction ?? "",

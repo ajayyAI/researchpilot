@@ -1,6 +1,6 @@
 import { generateText, Output } from "ai";
 import { getSystemPrompt } from "./prompts";
-import { getModel } from "./providers";
+import { getModel, throttledGenerate } from "./providers";
 import { type Finding, InformationGainSchema } from "./types";
 
 export const GAIN_HIGH = 0.7;
@@ -18,6 +18,7 @@ export interface GainResult {
 export async function computeInformationGain(
   newFindings: Finding[],
   existingFindings: Finding[],
+  signal?: AbortSignal,
 ): Promise<GainResult> {
   if (existingFindings.length === 0) {
     return {
@@ -40,15 +41,19 @@ export async function computeInformationGain(
   try {
     const prompt = getGainAssessmentPrompt(newFindings, existingFindings);
 
-    const { output } = await generateText({
-      model: getModel("fast"),
-      system: getSystemPrompt(),
-      prompt,
-      output: Output.object({
-        schema: InformationGainSchema,
+    const { output } = await throttledGenerate("fast", () =>
+      generateText({
+        model: getModel("fast"),
+        system: getSystemPrompt(),
+        prompt,
+        output: Output.object({
+          schema: InformationGainSchema,
+        }),
+        abortSignal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+          : AbortSignal.timeout(30_000),
       }),
-      abortSignal: AbortSignal.timeout(30_000),
-    });
+    );
 
     if (!output) {
       return heuristicGain(newFindings, existingFindings);
