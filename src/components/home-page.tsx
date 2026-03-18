@@ -36,7 +36,21 @@ export function HomePage() {
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState<ResearchProgress | null>(null);
-  const [progressLog, setProgressLog] = useState<string[]>([]);
+  const [progressLog, setProgressLog] = useState<
+    { id: number; text: string }[]
+  >([]);
+  const logIdRef = useRef(0);
+
+  const appendLog = useCallback((text: string) => {
+    setProgressLog((prev) => [...prev, { id: ++logIdRef.current, text }]);
+  }, []);
+
+  const appendLogDedup = useCallback((text: string) => {
+    setProgressLog((prev) => {
+      if (prev.length > 0 && prev[prev.length - 1].text === text) return prev;
+      return [...prev, { id: ++logIdRef.current, text }];
+    });
+  }, []);
   const [plan, setPlan] = useState<ResearchPlan | null>(null);
   const [result, setResult] = useState<CompletedResearch | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +65,7 @@ export function HomePage() {
   const resetState = useCallback(() => {
     setProgress(null);
     setProgressLog([]);
+    logIdRef.current = 0;
     setPlan(null);
     setResult(null);
     setError(null);
@@ -89,94 +104,92 @@ export function HomePage() {
         const decoder = new TextDecoder();
         let buffer = "";
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        const processMessage = (message: string) => {
+          if (!message.trim()) return;
 
-          buffer += decoder.decode(value, { stream: true });
-          const messages = buffer.split("\n\n");
-          buffer = messages.pop() || "";
+          let eventType = "message";
+          const dataLines: string[] = [];
 
-          for (const message of messages) {
-            if (!message.trim()) continue;
-
-            let eventType = "message";
-            const dataLines: string[] = [];
-
-            for (const line of message.split("\n")) {
-              if (line.startsWith("event: ")) {
-                eventType = line.slice(7).trim();
-              } else if (line.startsWith("data: ")) {
-                dataLines.push(line.slice(6));
-              }
-            }
-
-            const data = dataLines.join("\n");
-            if (!data) continue;
-
-            try {
-              const parsed = JSON.parse(data);
-
-              switch (eventType) {
-                case "plan":
-                  setPlan(parsed.plan);
-                  break;
-                case "progress":
-                  setProgress(parsed);
-                  if (parsed.status) {
-                    setProgressLog((prev) => {
-                      if (prev[prev.length - 1] === parsed.status) return prev;
-                      return [...prev, parsed.status];
-                    });
-                  }
-                  break;
-                case "status":
-                  if (parsed.status === "planning") setPhase("planning");
-                  else if (parsed.status === "researching")
-                    setPhase("researching");
-                  else if (parsed.status === "generating-report")
-                    setPhase("generating-report");
-                  if (parsed.message) {
-                    setProgressLog((prev) => [...prev, parsed.message]);
-                  }
-                  break;
-                case "aspect-complete":
-                  setProgressLog((prev) => [
-                    ...prev,
-                    `Completed: ${parsed.aspectId} (${parsed.findingsCount} findings, ${parsed.sourcesCount} sources)`,
-                  ]);
-                  break;
-                case "report-outline":
-                  setProgressLog((prev) => [
-                    ...prev,
-                    `Report outline: ${parsed.sections?.length ?? 0} sections`,
-                  ]);
-                  break;
-                case "report-section":
-                  setProgressLog((prev) => [
-                    ...prev,
-                    `Section written: ${parsed.sectionId}`,
-                  ]);
-                  break;
-                case "complete":
-                  setResult(parsed);
-                  setPhase("complete");
-                  break;
-                case "error":
-                  setError(parsed.error);
-                  setPhase("error");
-                  break;
-              }
-            } catch {
-              // Ignore malformed SSE data
+          for (const line of message.split("\n")) {
+            if (line.startsWith("event: ")) {
+              eventType = line.slice(7).trim();
+            } else if (line.startsWith("data: ")) {
+              dataLines.push(line.slice(6));
             }
           }
+
+          const data = dataLines.join("\n");
+          if (!data) return;
+
+          try {
+            const parsed = JSON.parse(data);
+
+            switch (eventType) {
+              case "plan":
+                setPlan(parsed.plan);
+                break;
+              case "progress":
+                setProgress(parsed);
+                if (parsed.status) appendLogDedup(parsed.status);
+                break;
+              case "status":
+                if (parsed.status === "planning") setPhase("planning");
+                else if (parsed.status === "researching")
+                  setPhase("researching");
+                else if (parsed.status === "generating-report")
+                  setPhase("generating-report");
+                if (parsed.message) appendLog(parsed.message);
+                break;
+              case "aspect-complete":
+                appendLog(
+                  `Completed: ${parsed.aspectId} (${parsed.findingsCount} findings, ${parsed.sourcesCount} sources)`,
+                );
+                break;
+              case "report-outline":
+                appendLog(
+                  `Report outline: ${parsed.sections?.length ?? 0} sections`,
+                );
+                break;
+              case "report-section":
+                appendLog(`Section written: ${parsed.sectionId}`);
+                break;
+              case "complete":
+                setResult(parsed);
+                setPhase("complete");
+                break;
+              case "error":
+                setError(parsed.error);
+                setPhase("error");
+                break;
+            }
+          } catch {
+            // Ignore malformed SSE data
+          }
+        };
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const messages = buffer.split("\n\n");
+            buffer = messages.pop() || "";
+
+            for (const message of messages) {
+              processMessage(message);
+            }
+          }
+
+          // Flush remaining decoder bytes and process any final message
+          buffer += decoder.decode();
+          if (buffer.trim()) {
+            processMessage(buffer);
+          }
+        } finally {
+          reader.cancel().catch(() => {});
         }
 
-        // Flush remaining decoder bytes
-        buffer += decoder.decode();
-        // If stream ended without a terminal event, surface the error
-        // (phase is still set from above — check via a ref-like read)
         setPhase((current) => {
           if (current !== "complete" && current !== "error") {
             setError("Research stream ended unexpectedly. Please try again.");
@@ -190,7 +203,7 @@ export function HomePage() {
         setPhase("error");
       }
     },
-    [query, effort, resetState],
+    [query, effort, resetState, appendLog, appendLogDedup],
   );
 
   const handleCancel = useCallback(() => {

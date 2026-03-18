@@ -149,12 +149,11 @@ async function research(
           options.onSource?.(src);
         }
 
-        const contents = results
-          .map((r) => r.markdown)
-          .filter((c): c is string => !!c);
-        if (contents.length === 0) return;
+        const withContent = results.filter((r) => r.markdown && r.url);
+        if (withContent.length === 0) return;
 
-        const urls = results.map((r) => r.url).filter(Boolean);
+        const contents = withContent.map((r) => r.markdown as string);
+        const urls = withContent.map((r) => r.url);
         const extracted = await extractFindings(
           aspect,
           q,

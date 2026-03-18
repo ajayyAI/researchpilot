@@ -5,9 +5,14 @@ import { useEffect, useRef } from "react";
 import { Progress } from "@/components/ui/progress";
 import type { ResearchProgress as ResearchProgressType } from "@/lib/research";
 
+export interface LogEntry {
+  id: number;
+  text: string;
+}
+
 interface ResearchProgressProps {
   progress: ResearchProgressType | null;
-  progressLog: string[];
+  progressLog: LogEntry[];
   isGeneratingReport?: boolean;
   query: string;
 }
@@ -109,15 +114,15 @@ export function ResearchProgress({
           <div className="p-3 space-y-1.5">
             {visibleLog.map((entry) => (
               <div
-                key={entry}
+                key={entry.id}
                 className="flex items-start gap-2 text-text-secondary animate-[fade-in_0.3s_ease-out]"
               >
-                {entry.startsWith("Searching:") ? (
+                {entry.text.startsWith("Searching:") ? (
                   <Search className="size-3 text-accent shrink-0 mt-0.5" />
                 ) : (
                   <span className="text-accent shrink-0">{">"}</span>
                 )}
-                <span>{entry}</span>
+                <span>{entry.text}</span>
               </div>
             ))}
 

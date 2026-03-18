@@ -50,8 +50,12 @@ export async function POST(request: Request) {
 
         const sendEvent = (event: string, data: unknown) => {
           if (closed || request.signal.aborted) return;
-          const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-          controller.enqueue(encoder.encode(message));
+          try {
+            const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+            controller.enqueue(encoder.encode(message));
+          } catch {
+            closeStream();
+          }
         };
 
         try {
