@@ -2,6 +2,8 @@
 
 AI-powered deep research assistant that recursively searches the web, extracts insights, and synthesizes comprehensive reports.
 
+GitHub: https://github.com/ajayyAI/researchpilot
+
 ## How It Works
 
 ```
@@ -46,7 +48,7 @@ Query → Generate search queries → Search web → Extract learnings
 ### Setup
 
 ```bash
-git clone https://github.com/your-username/researchpilot.git
+git clone https://github.com/ajayyAI/researchpilot.git
 cd researchpilot
 bun install
 cp .env.example .env

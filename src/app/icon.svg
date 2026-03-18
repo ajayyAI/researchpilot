@@ -1,0 +1,29 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="128" fill="url(#bg)" />
+  <rect x="24" y="24" width="464" height="464" rx="104" stroke="url(#edge)" stroke-opacity="0.65" stroke-width="4" />
+  <circle cx="256" cy="256" r="116" stroke="url(#ringOuter)" stroke-width="22" />
+  <circle cx="256" cy="256" r="56" stroke="#FFFFFF" stroke-opacity="0.82" stroke-width="18" />
+  <circle cx="256" cy="256" r="16" fill="#FFF7ED" />
+  <circle cx="342" cy="170" r="26" fill="#FBBF24" />
+  <path d="M256 140C320.065 140 372 191.935 372 256" stroke="url(#sweep)" stroke-linecap="round" stroke-width="18" />
+  <path d="M140 256C140 191.935 191.935 140 256 140" stroke="#FFFFFF" stroke-opacity="0.16" stroke-linecap="round" stroke-width="18" />
+  <defs>
+    <linearGradient id="bg" x1="70" y1="44" x2="454" y2="488" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111111" />
+      <stop offset="0.56" stop-color="#171717" />
+      <stop offset="1" stop-color="#262626" />
+    </linearGradient>
+    <linearGradient id="edge" x1="50" y1="50" x2="462" y2="462" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.4" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.08" />
+    </linearGradient>
+    <linearGradient id="ringOuter" x1="140" y1="140" x2="372" y2="372" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D97706" />
+      <stop offset="1" stop-color="#F59E0B" />
+    </linearGradient>
+    <linearGradient id="sweep" x1="256" y1="140" x2="372" y2="256" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FBBF24" />
+      <stop offset="1" stop-color="#FED7AA" />
+    </linearGradient>
+  </defs>
+</svg>

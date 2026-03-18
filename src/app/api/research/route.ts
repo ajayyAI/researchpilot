@@ -1,34 +1,47 @@
+import { z } from "zod";
 import { deepResearch, generateReport } from "@/lib/research";
 
+const ResearchRequestSchema = z.object({
+  query: z.string().trim().min(1).max(2000),
+  breadth: z.coerce.number().int().min(1).max(10).default(4),
+  depth: z.coerce.number().int().min(1).max(5).default(2),
+});
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { query, breadth = 4, depth = 2 } = body;
+    const body = await request.json().catch(() => null);
+    const parsedBody = ResearchRequestSchema.safeParse(body);
 
-    if (!query || typeof query !== "string" || query.trim().length === 0) {
+    if (!parsedBody.success) {
       return Response.json(
-        { error: "Query is required and must be a non-empty string" },
+        {
+          error:
+            "Invalid request. Provide a non-empty query plus breadth and depth values within the supported ranges.",
+        },
         { status: 400 },
       );
     }
 
-    if (query.length > 2000) {
-      return Response.json(
-        { error: "Query must be under 2000 characters" },
-        { status: 400 },
-      );
-    }
-
-    const safeBreadth = Math.min(Math.max(Number(breadth) || 4, 1), 10);
-    const safeDepth = Math.min(Math.max(Number(depth) || 2, 1), 5);
+    const { query, breadth, depth } = parsedBody.data;
 
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
       async start(controller) {
+        let closed = false;
+
+        const closeStream = () => {
+          if (closed) return;
+          closed = true;
+          controller.close();
+        };
+
         const sendEvent = (event: string, data: unknown) => {
+          if (closed || request.signal.aborted) return;
           const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
           controller.enqueue(encoder.encode(message));
         };
@@ -41,8 +54,8 @@ export async function POST(request: Request) {
 
           const result = await deepResearch({
             query,
-            breadth: safeBreadth,
-            depth: safeDepth,
+            breadth,
+            depth,
             onProgress: (progress) => {
               sendEvent("progress", progress);
             },
@@ -69,18 +82,28 @@ export async function POST(request: Request) {
             },
           });
 
-          controller.close();
+          closeStream();
         } catch (error) {
-          console.error("Research error:", error);
-          sendEvent("error", { error: "Research failed. Please try again." });
-          controller.close();
+          if (!request.signal.aborted) {
+            console.error("Research error:", error);
+
+            const message =
+              error instanceof Error &&
+              /(_API_KEY|AI_PROVIDER|AI_MODEL|FIRECRAWL)/.test(error.message)
+                ? "Research is not configured correctly. Check the required API keys and provider settings."
+                : "Research failed. Please try again.";
+
+            sendEvent("error", { error: message });
+          }
+
+          closeStream();
         }
       },
     });
 
     return new Response(stream, {
       headers: {
-        "Content-Type": "text/event-stream",
+        "Content-Type": "text/event-stream; charset=utf-8",
         "Cache-Control": "no-store",
         Connection: "keep-alive",
         "X-Accel-Buffering": "no",
