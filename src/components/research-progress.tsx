@@ -107,9 +107,9 @@ export function ResearchProgress({
           className="bg-bg-primary rounded-lg border border-border font-mono text-xs h-48 overflow-y-auto"
         >
           <div className="p-3 space-y-1.5">
-            {visibleLog.map((entry, idx) => (
+            {visibleLog.map((entry) => (
               <div
-                key={`${logLength - visibleLog.length + idx}`}
+                key={entry}
                 className="flex items-start gap-2 text-text-secondary animate-[fade-in_0.3s_ease-out]"
               >
                 {entry.startsWith("Searching:") ? (

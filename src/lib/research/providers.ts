@@ -4,15 +4,24 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
 
 export type ModelTier = "fast" | "smart" | "strategic";
-
 type Provider = "openai" | "groq" | "openrouter";
 
-const VALID_PROVIDERS = new Set<string>(["openai", "groq", "openrouter"]);
-
-const DEFAULT_MODELS: Record<Provider, string> = {
-  openai: "gpt-4.1",
-  groq: "meta-llama/llama-4-scout-17b-16e-instruct",
-  openrouter: "google/gemini-2.5-flash:free",
+const DEFAULT_MODELS: Record<Provider, Record<ModelTier, string>> = {
+  openai: {
+    fast: "gpt-4.1-mini",
+    smart: "gpt-4.1",
+    strategic: "o4-mini",
+  },
+  groq: {
+    fast: "meta-llama/llama-4-scout-17b-16e-instruct",
+    smart: "meta-llama/llama-4-scout-17b-16e-instruct",
+    strategic: "meta-llama/llama-4-scout-17b-16e-instruct",
+  },
+  openrouter: {
+    fast: "mistralai/mistral-small-3.1-24b-instruct:free",
+    smart: "meta-llama/llama-3.3-70b-instruct:free",
+    strategic: "meta-llama/llama-3.3-70b-instruct:free",
+  },
 };
 
 const TIER_ENV_VARS: Record<ModelTier, string> = {
@@ -21,47 +30,51 @@ const TIER_ENV_VARS: Record<ModelTier, string> = {
   strategic: "AI_MODEL_STRATEGIC",
 };
 
-let _openai: ReturnType<typeof createOpenAI> | null = null;
-let _groq: ReturnType<typeof createGroq> | null = null;
-let _openrouter: ReturnType<typeof createOpenRouter> | null = null;
+const VALID_PROVIDERS = new Set<string>(["openai", "groq", "openrouter"]);
 
-function getOpenAI() {
-  if (!_openai) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error(
-        "OPENAI_API_KEY is required when AI_PROVIDER=openai. Get one at https://platform.openai.com/api-keys",
-      );
-    }
-    _openai = createOpenAI({ apiKey });
-  }
-  return _openai;
-}
+const API_KEY_CONFIG: Record<
+  Provider,
+  { env: string; label: string; url: string }
+> = {
+  openai: {
+    env: "OPENAI_API_KEY",
+    label: "OPENAI_API_KEY",
+    url: "https://platform.openai.com/api-keys",
+  },
+  groq: {
+    env: "GROQ_API_KEY",
+    label: "GROQ_API_KEY",
+    url: "https://console.groq.com",
+  },
+  openrouter: {
+    env: "OPENROUTER_API_KEY",
+    label: "OPENROUTER_API_KEY",
+    url: "https://openrouter.ai/keys",
+  },
+};
 
-function getGroq() {
-  if (!_groq) {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      throw new Error(
-        "GROQ_API_KEY is required when AI_PROVIDER=groq. Get one at https://console.groq.com",
-      );
-    }
-    _groq = createGroq({ apiKey });
-  }
-  return _groq;
-}
+const providerCache = new Map<Provider, ReturnType<typeof createOpenAI>>();
 
-function getOpenRouter() {
-  if (!_openrouter) {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      throw new Error(
-        "OPENROUTER_API_KEY is required when AI_PROVIDER=openrouter. Get one at https://openrouter.ai/keys",
-      );
-    }
-    _openrouter = createOpenRouter({ apiKey });
+function getProviderClient(provider: Provider) {
+  const cached = providerCache.get(provider);
+  if (cached) return cached;
+
+  const { env, label, url } = API_KEY_CONFIG[provider];
+  const apiKey = process.env[env];
+  if (!apiKey) {
+    throw new Error(
+      `${label} is required when AI_PROVIDER=${provider}. Get one at ${url}`,
+    );
   }
-  return _openrouter;
+
+  const factory = {
+    openai: createOpenAI,
+    groq: createGroq,
+    openrouter: createOpenRouter,
+  };
+  const client = factory[provider]({ apiKey });
+  providerCache.set(provider, client as ReturnType<typeof createOpenAI>);
+  return client;
 }
 
 function getProvider(): Provider {
@@ -75,29 +88,18 @@ function getProvider(): Provider {
 }
 
 function getModelIdForTier(tier: ModelTier, provider: Provider): string {
-  const tierEnvVar = TIER_ENV_VARS[tier];
-  const tierModel = process.env[tierEnvVar];
-
+  const tierModel = process.env[TIER_ENV_VARS[tier]];
   if (tierModel) return tierModel;
 
-  // For non-smart tiers, fall back to AI_MODEL before the provider default
   if (tier !== "smart" && process.env.AI_MODEL) {
     return process.env.AI_MODEL;
   }
 
-  return DEFAULT_MODELS[provider];
+  return DEFAULT_MODELS[provider][tier];
 }
 
 export function getModel(tier?: ModelTier): LanguageModel {
   const provider = getProvider();
   const modelId = getModelIdForTier(tier ?? "smart", provider);
-
-  switch (provider) {
-    case "groq":
-      return getGroq()(modelId);
-    case "openrouter":
-      return getOpenRouter()(modelId);
-    default:
-      return getOpenAI()(modelId);
-  }
+  return getProviderClient(provider)(modelId) as LanguageModel;
 }
