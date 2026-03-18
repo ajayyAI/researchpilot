@@ -3,14 +3,6 @@ import { getFeedbackPrompt, getSystemPrompt } from "./prompts";
 import { getModel } from "./providers";
 import { FeedbackSchema } from "./types";
 
-/**
- * Generate clarifying follow-up questions before starting research.
- * Helps refine the research direction based on user input.
- *
- * @param query - The user's initial research query
- * @param numQuestions - Maximum number of questions to generate (default: 3)
- * @returns Array of follow-up questions
- */
 export async function generateFeedback(
   query: string,
   numQuestions = 3,

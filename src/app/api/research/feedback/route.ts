@@ -1,11 +1,5 @@
 import { generateFeedback } from "@/lib/research";
 
-/**
- * POST /api/research/feedback
- *
- * Generate follow-up questions to clarify research direction.
- * Called before starting the main research to refine the query.
- */
 export async function POST(request: Request) {
   try {
     const body = await request.json();

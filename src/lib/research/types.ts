@@ -1,39 +1,25 @@
 import { z } from "zod";
 
 export interface ResearchConfig {
-  /** The user's research query */
   query: string;
-  /** Number of parallel SERP queries per level (default: 4) */
   breadth: number;
-  /** Number of recursive research levels (default: 2) */
   depth: number;
-  /** Combined query including follow-up answers */
   combinedQuery?: string;
 }
 
 export interface ResearchProgress {
-  /** Current depth level (counts down from initial) */
   currentDepth: number;
-  /** Initial depth setting */
   totalDepth: number;
-  /** Current breadth setting */
   currentBreadth: number;
-  /** Initial breadth setting */
   totalBreadth: number;
-  /** Currently executing query */
   currentQuery?: string;
-  /** Total number of queries to execute */
   totalQueries: number;
-  /** Number of completed queries */
   completedQueries: number;
-  /** Current status message */
   status?: string;
 }
 
 export interface ResearchResult {
-  /** Accumulated learnings from all searches */
   learnings: string[];
-  /** All URLs visited during research */
   visitedUrls: string[];
 }
 

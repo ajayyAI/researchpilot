@@ -18,20 +18,6 @@ import {
   type SerpQuery,
 } from "./types";
 
-/**
- * Deep Research Engine
- *
- * Performs iterative, recursive research on any topic by:
- * 1. Generating SERP queries based on the research goal
- * 2. Searching the web and extracting content
- * 3. Processing results to extract key learnings
- * 4. Recursively exploring follow-up questions at deeper levels
- * 5. Compiling all learnings into a comprehensive report
- */
-
-/**
- * Generate SERP queries from user input and previous learnings.
- */
 async function generateSerpQueries(
   query: string,
   numQueries: number,
@@ -55,9 +41,6 @@ async function generateSerpQueries(
   return output.queries.slice(0, numQueries);
 }
 
-/**
- * Process search results to extract learnings and follow-up questions.
- */
 async function processSearchResults(
   query: string,
   contents: string[],
@@ -68,7 +51,6 @@ async function processSearchResults(
     return { learnings: [], followUpQuestions: [] };
   }
 
-  // Trim each content to prevent context overflow
   const trimmedContents = contents.map((c) => trimPrompt(c, 25_000));
 
   const { output } = await generateText({
@@ -95,18 +77,6 @@ async function processSearchResults(
   return output;
 }
 
-/**
- * Perform deep, recursive research on a topic.
- *
- * @param config - Research configuration
- * @param config.query - The research query
- * @param config.breadth - Number of parallel queries per level
- * @param config.depth - Number of recursive levels
- * @param config.learnings - Accumulated learnings (internal use)
- * @param config.visitedUrls - Visited URLs (internal use)
- * @param config.onProgress - Progress callback for real-time updates
- * @returns Research results with learnings and visited URLs
- */
 export async function deepResearch({
   query,
   breadth,
@@ -246,14 +216,6 @@ Follow-up research directions: ${processed.followUpQuestions.map((q) => `\n- ${q
   };
 }
 
-/**
- * Generate a comprehensive research report from accumulated learnings.
- *
- * @param query - The original research query
- * @param learnings - All learnings from the research
- * @param visitedUrls - All URLs visited during research
- * @returns Markdown-formatted research report
- */
 export async function generateReport(
   query: string,
   learnings: string[],

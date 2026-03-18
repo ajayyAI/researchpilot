@@ -8,13 +8,11 @@ import { Button } from "@/components/ui/button";
 export function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Background Effects */}
       <div className="absolute inset-0 bg-[#030305]">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-electric-blue/10 rounded-full blur-[120px] opacity-30 animate-pulse" />
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-cyber-purple/10 rounded-full blur-[100px] opacity-20" />
       </div>
 
-      {/* Grid Pattern - CSS-based */}
       <div
         className="absolute inset-0 opacity-20"
         style={{
@@ -82,7 +80,6 @@ export function Hero() {
         </motion.div>
       </div>
 
-      {/* Decorative Elements */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-[#030305] to-transparent pointer-events-none" />
     </section>
   );

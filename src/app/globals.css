@@ -1,28 +1,24 @@
 @import "tailwindcss";
 
-/* ============================================
-   Makebolt Design System - Premium Dark Mode
-   ============================================ */
-
 @theme {
-  /* Colors - Deep Void Palette */
   --color-deep-void: #030305;
   --color-electric-blue: #3b82f6;
   --color-cyber-purple: #8b5cf6;
   --color-off-white: #f8fafc;
   --color-void-border: rgba(255, 255, 255, 0.08);
 
-  /* Semantic Mappings */
   --color-bg-primary: var(--color-deep-void);
+  --color-bg-secondary: #0a0a0f;
   --color-text-primary: var(--color-off-white);
-  --color-text-secondary: #94a3b8; /* slate-400 */
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-charcoal: #1a1a2e;
+  --color-neon-purple: #a855f7;
 
-  /* Typography */
   --font-sans: var(--font-dm-sans), system-ui, -apple-system, sans-serif;
   --font-heading:
     var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
 
-  /* Animations */
   --animate-fade-in: fade-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   --animate-slide-up: slide-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   --animate-scale-in: scale-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -59,10 +55,6 @@
   }
 }
 
-/* ============================================
-   Base Styles
-   ============================================ */
-
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -91,7 +83,7 @@
   }
 
   ::selection {
-    background-color: rgba(59, 130, 246, 0.2); /* electric-blue/20 */
+    background-color: rgba(59, 130, 246, 0.2);
     color: var(--color-electric-blue);
   }
 }
@@ -109,6 +101,10 @@
     text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
   }
 
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-electric-blue/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary;
+  }
+
   .container-width {
     @apply max-w-7xl mx-auto px-6 sm:px-8;
   }
@@ -117,7 +113,6 @@
     @apply bg-clip-text text-transparent bg-linear-to-r from-electric-blue to-cyber-purple;
   }
 
-  /* Typography Scale - Extreme Weight Contrast */
   .text-display {
     font-size: clamp(3rem, 8vw, 7rem);
     font-weight: 900;

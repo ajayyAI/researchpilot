@@ -2,7 +2,7 @@
 
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ResearchForm } from "@/components/research-form";
 import { ResearchProgress as ResearchProgressCard } from "@/components/research-progress";
 import { ResearchReport } from "@/components/research-report";
@@ -35,9 +35,14 @@ export default function ResearchPage() {
   const [progress, setProgress] = useState<ResearchProgress | null>(null);
   const [result, setResult] = useState<ResearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const startResearch = useCallback(async () => {
     if (!query.trim()) return;
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     setState("researching");
     setProgress(null);
@@ -49,10 +54,14 @@ export default function ResearchPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query, breadth, depth }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
-        throw new Error("Research request failed");
+        const body = await response.json().catch(() => null);
+        throw new Error(
+          body?.error || `Research request failed (${response.status})`,
+        );
       }
 
       const reader = response.body?.getReader();
@@ -66,41 +75,54 @@ export default function ResearchPage() {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
 
-        for (const line of lines) {
-          if (line.startsWith("event: ")) {
-            const eventType = line.slice(7);
-            const dataLineIndex = lines.indexOf(line) + 1;
-            const dataLine = lines[dataLineIndex];
+        const messages = buffer.split("\n\n");
+        buffer = messages.pop() || "";
 
-            if (dataLine?.startsWith("data: ")) {
-              const data = JSON.parse(dataLine.slice(6));
+        for (const message of messages) {
+          if (!message.trim()) continue;
 
-              switch (eventType) {
-                case "progress":
-                  setProgress(data);
-                  break;
-                case "status":
-                  if (data.status === "generating-report") {
-                    setState("generating-report");
-                  }
-                  break;
-                case "complete":
-                  setResult(data);
-                  setState("complete");
-                  break;
-                case "error":
-                  setError(data.error);
-                  setState("error");
-                  break;
-              }
+          let eventType = "message";
+          let data = "";
+
+          for (const line of message.split("\n")) {
+            if (line.startsWith("event: ")) {
+              eventType = line.slice(7).trim();
+            } else if (line.startsWith("data: ")) {
+              data = line.slice(6);
             }
+          }
+
+          if (!data) continue;
+
+          try {
+            const parsed = JSON.parse(data);
+
+            switch (eventType) {
+              case "progress":
+                setProgress(parsed);
+                break;
+              case "status":
+                if (parsed.status === "generating-report") {
+                  setState("generating-report");
+                }
+                break;
+              case "complete":
+                setResult(parsed);
+                setState("complete");
+                break;
+              case "error":
+                setError(parsed.error);
+                setState("error");
+                break;
+            }
+          } catch {
+            console.warn("Failed to parse SSE data:", data);
           }
         }
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Research failed");
       setState("error");
     }

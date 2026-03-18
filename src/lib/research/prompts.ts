@@ -1,12 +1,3 @@
-/**
- * System prompts for the Deep Research engine.
- * Designed for expert-level analysis and research.
- */
-
-/**
- * Main system prompt for the research assistant.
- * Establishes the AI as an expert researcher with specific behavioral guidelines.
- */
 export function getSystemPrompt(): string {
   const now = new Date().toISOString();
 
@@ -25,9 +16,6 @@ export function getSystemPrompt(): string {
 - You may speculate or predict when relevant, but clearly flag it as such.`;
 }
 
-/**
- * Prompt for generating SERP queries from user input.
- */
 export function getSerpQueryPrompt(
   query: string,
   numQueries: number,
@@ -45,9 +33,6 @@ Each query must be unique and explore different aspects of the topic.
 <prompt>${query}</prompt>${learningsContext}`;
 }
 
-/**
- * Prompt for extracting learnings from search results.
- */
 export function getLearningsPrompt(
   query: string,
   contents: string[],
@@ -76,9 +61,6 @@ Requirements for follow-up questions:
 <contents>${contentsStr}</contents>`;
 }
 
-/**
- * Prompt for generating the final research report.
- */
 export function getReportPrompt(query: string, learnings: string[]): string {
   const learningsStr = learnings
     .map((learning) => `<learning>\n${learning}\n</learning>`)
@@ -101,9 +83,6 @@ ${learningsStr}
 </learnings>`;
 }
 
-/**
- * Prompt for generating follow-up questions before research starts.
- */
 export function getFeedbackPrompt(query: string, numQuestions: number): string {
   return `Given the following research query from the user, generate clarifying follow-up questions to better understand their research needs.
 

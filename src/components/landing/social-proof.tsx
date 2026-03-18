@@ -18,7 +18,6 @@ export function SocialProof() {
           Trusted by forward-thinking teams
         </p>
         <div className="flex flex-wrap justify-center gap-12 md:gap-20 items-center opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-          {/* Placeholder Logos using Text for now, ideally SVG logos */}
           {companies.map((company, i) => (
             <motion.div
               key={company}

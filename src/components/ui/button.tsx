@@ -17,7 +17,6 @@ const buttonVariants = cva(
         secondary: "bg-white text-black hover:bg-white/90 shadow-sm",
         ghost: "hover:bg-white/5 hover:text-white text-text-secondary",
         link: "text-electric-blue underline-offset-4 hover:underline",
-        // Legacy support (optional, can be removed if refactored everywhere)
         dark: "bg-charcoal text-white border border-white/10 hover:bg-white/5",
         light: "bg-white text-black hover:bg-white/90",
       },

@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 export function CTA() {
   return (
     <section className="py-20 md:py-32 relative overflow-hidden">
-      {/* Background Mesh */}
       <div className="absolute inset-0 bg-electric-blue/5" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-bg-primary)_0%,transparent_100%)] opacity-80" />
 

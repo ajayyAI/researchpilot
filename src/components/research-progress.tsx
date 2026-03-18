@@ -61,8 +61,6 @@ export function ResearchProgress({
               </div>
             )}
 
-            {/* We could show history here if we had it in the progress object, 
-                    for now we just show the current state nicely */}
             {progress.completedQueries > 0 && (
               <div className="flex items-center gap-3 text-green-400/80">
                 <span className="text-green-500">✓</span>

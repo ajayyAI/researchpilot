@@ -108,9 +108,7 @@ export function Footer() {
             &copy; {new Date().getFullYear()} ResearchPilot. All rights
             reserved.
           </p>
-          <div className="flex items-center gap-6">
-            {/* Social icons could go here */}
-          </div>
+          <div className="flex items-center gap-6" />
         </div>
       </div>
     </footer>

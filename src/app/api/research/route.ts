@@ -1,19 +1,22 @@
 import { deepResearch, generateReport } from "@/lib/research";
 
-/**
- * POST /api/research
- *
- * Main research endpoint that performs deep research on a topic.
- * Streams progress updates to the client.
- */
+export const maxDuration = 300;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { query, breadth = 4, depth = 2 } = body;
 
-    if (!query || typeof query !== "string") {
+    if (!query || typeof query !== "string" || query.trim().length === 0) {
       return Response.json(
-        { error: "Query is required and must be a string" },
+        { error: "Query is required and must be a non-empty string" },
+        { status: 400 },
+      );
+    }
+
+    if (query.length > 2000) {
+      return Response.json(
+        { error: "Query must be under 2000 characters" },
         { status: 400 },
       );
     }
@@ -77,8 +80,9 @@ export async function POST(request: Request) {
     return new Response(stream, {
       headers: {
         "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-store",
         Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
       },
     });
   } catch (error) {
