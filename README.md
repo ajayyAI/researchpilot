@@ -11,7 +11,7 @@ One query in. Structured, source-backed report out.
 [![Vercel AI SDK](https://img.shields.io/badge/AI_SDK-v6-000?logo=vercel)](https://sdk.vercel.ai)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://typescriptlang.org)
 
-[Demo](https://researchpilot.dev) &middot; [Getting Started](#getting-started) &middot; [Architecture](#architecture) &middot; [Configuration](#configuration) &middot; [Roadmap](#roadmap)
+[Getting Started](#getting-started) &middot; [Architecture](#architecture) &middot; [Configuration](#configuration) &middot; [Roadmap](#roadmap)
 
 </div>
 
@@ -42,42 +42,21 @@ Query → Plan → Search → Extract → Assess → Repeat? → Report
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                       Next.js App                           │
-│                                                             │
-│  ┌──────────┐   ┌──────────┐   ┌────────────────────────┐  │
-│  │ Research  │──▶│ Planner  │──▶│  Research Orchestrator  │  │
-│  │   Form    │   │(strategic│   │                        │  │
-│  │           │   │   LLM)   │   │  ┌────────┐┌────────┐ │  │
-│  │ Quick /   │   └──────────┘   │  │Worker 1││Worker 2│ │  │
-│  │ Thorough /│                  │  │(aspect)││(aspect)│ │  │
-│  │ Deep      │   SSE Stream     │  └───┬────┘└───┬────┘ │  │
-│  └──────────┘   ◀──────────     │      └────┬────┘      │  │
-│                                 │           ▼           │  │
-│  ┌──────────────────────────┐   │  ┌─────────────────┐  │  │
-│  │   Research Plan Card     │   │  │ Research State   │  │  │
-│  │   Progress Tracker       │   │  │ (immutable)      │  │  │
-│  │   Report Viewer          │   │  └────────┬────────┘  │  │
-│  └──────────────────────────┘   │           ▼           │  │
-│                                 │  ┌─────────────────┐  │  │
-│                                 │  │ Report Pipeline  │  │  │
-│                                 │  │ Outline→Sections │  │  │
-│                                 │  │ →Intro→Assemble  │  │  │
-│                                 │  └─────────────────┘  │  │
-│                                 └────────────────────────┘  │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  Infrastructure                                     │    │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ │    │
-│  │  │ Search   │ │ Tiered   │ │Credibil- │ │ Info   │ │    │
-│  │  │ Firecrawl│ │ Models   │ │ity       │ │ Gain   │ │    │
-│  │  │ + Tavily │ │ fast /   │ │ Scoring  │ │ Stop   │ │    │
-│  │  │ (+ Exa)  │ │ smart /  │ │ heuristic│ │        │ │    │
-│  │  │          │ │ strategic│ │ + LLM    │ │        │ │    │
-│  │  └──────────┘ └──────────┘ └──────────┘ └────────┘ │    │
-│  └─────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    Form["📝 Research Form\nQuick / Thorough / Deep"] --> Planner["🧠 Planner\nstrategic LLM"]
+    Planner -->|research plan| W1["⚙️ Worker 1\naspect"] & W2["⚙️ Worker 2\naspect"]
+
+    W1 & W2 -->|findings| State["📦 Research State\nimmutable"]
+    State --> Pipeline["📄 Report Pipeline\noutline → sections → assemble"]
+    Pipeline --> Report(["✅ Structured Report"])
+
+    W1 & W2 -. search .-> Search["🔍 Firecrawl + Tavily"]
+    W1 & W2 -. score .-> Cred["🏅 Credibility Scoring"]
+    W1 & W2 -. gain .-> Gain["📊 Info Gain / Stop"]
+    W1 & W2 -. LLM .-> Models["⚡ fast · smart · strategic"]
+
+    Pipeline -. SSE stream .-> Form
 ```
 
 ### Key Design Decisions

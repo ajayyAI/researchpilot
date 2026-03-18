@@ -1,4 +1,4 @@
-export const DEFAULT_SITE_URL = "https://researchpilot.dev";
+export const DEFAULT_SITE_URL = "http://localhost:3000";
 
 export const siteConfig = {
   name: "ResearchPilot",

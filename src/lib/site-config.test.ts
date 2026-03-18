@@ -11,14 +11,14 @@ describe("site-config", () => {
   });
 
   test("trims a trailing slash from configured site URLs", () => {
-    expect(normalizeSiteUrl("https://researchpilot.dev/")).toBe(
-      "https://researchpilot.dev",
+    expect(normalizeSiteUrl("http://localhost:3000/")).toBe(
+      "http://localhost:3000",
     );
   });
 
   test("creates absolute URLs from relative paths", () => {
     expect(createAbsoluteUrl("/manifest.webmanifest")).toBe(
-      "https://researchpilot.dev/manifest.webmanifest",
+      "http://localhost:3000/manifest.webmanifest",
     );
   });
 });
