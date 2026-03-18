@@ -1,36 +1,67 @@
 "use client";
 
-import { ArrowRight, Loader2, Search } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Loader2,
+  Microscope,
+  Search,
+  Zap,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
+import type { EffortLevel } from "@/lib/research";
 
 interface ResearchFormProps {
   query: string;
   onQueryChange: (query: string) => void;
-  breadth: number;
-  onBreadthChange: (breadth: number) => void;
-  depth: number;
-  onDepthChange: (depth: number) => void;
+  effort: EffortLevel;
+  onEffortChange: (effort: EffortLevel) => void;
   onSubmit: () => void;
   isLoading: boolean;
-  loadingText?: string;
 }
+
+const EFFORT_OPTIONS: Array<{
+  value: EffortLevel;
+  label: string;
+  description: string;
+  icon: typeof Zap;
+}> = [
+  {
+    value: "quick",
+    label: "Quick",
+    description: "Fast scan, key facts",
+    icon: Zap,
+  },
+  {
+    value: "thorough",
+    label: "Thorough",
+    description: "Multi-source analysis",
+    icon: BookOpen,
+  },
+  {
+    value: "deep",
+    label: "Deep",
+    description: "Exhaustive research",
+    icon: Microscope,
+  },
+];
 
 export function ResearchForm({
   query,
   onQueryChange,
-  breadth,
-  onBreadthChange,
-  depth,
-  onDepthChange,
+  effort,
+  onEffortChange,
   onSubmit,
   isLoading,
-  loadingText = "Researching...",
 }: ResearchFormProps) {
   return (
     <div className="space-y-5">
       <div className="surface rounded-xl overflow-hidden transition-all focus-within:border-accent/30 focus-within:ring-1 focus-within:ring-accent/20">
+        <label htmlFor="research-query" className="sr-only">
+          Research topic
+        </label>
         <textarea
+          id="research-query"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={(e) => {
@@ -51,51 +82,33 @@ export function ResearchForm({
         />
 
         <div className="flex items-center justify-between px-5 pb-4">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2.5">
-              <label
-                htmlFor="breadth"
-                className="text-xs font-medium text-text-muted"
-              >
-                Breadth
-              </label>
-              <Slider
-                id="breadth"
-                min={1}
-                max={10}
-                step={1}
-                value={[breadth]}
-                onValueChange={(v) => onBreadthChange(v[0])}
-                disabled={isLoading}
-                className="w-20"
-              />
-              <span className="text-xs font-mono text-text-secondary w-3 text-right">
-                {breadth}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <label
-                htmlFor="depth"
-                className="text-xs font-medium text-text-muted"
-              >
-                Depth
-              </label>
-              <Slider
-                id="depth"
-                min={1}
-                max={5}
-                step={1}
-                value={[depth]}
-                onValueChange={(v) => onDepthChange(v[0])}
-                disabled={isLoading}
-                className="w-20"
-              />
-              <span className="text-xs font-mono text-text-secondary w-3 text-right">
-                {depth}
-              </span>
-            </div>
-          </div>
+          <fieldset
+            className="flex items-center gap-1.5"
+            aria-label="Research depth"
+          >
+            {EFFORT_OPTIONS.map((opt) => {
+              const Icon = opt.icon;
+              const selected = effort === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onEffortChange(opt.value)}
+                  disabled={isLoading}
+                  aria-pressed={selected}
+                  title={opt.description}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                    selected
+                      ? "bg-accent/15 text-accent border border-accent/30"
+                      : "text-text-muted hover:text-text-secondary hover:bg-bg-elevated border border-transparent"
+                  } disabled:opacity-50 disabled:pointer-events-none`}
+                >
+                  <Icon className="size-3.5" />
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </fieldset>
 
           <Button
             onClick={onSubmit}
@@ -106,7 +119,7 @@ export function ResearchForm({
             {isLoading ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" />
-                <span>{loadingText}</span>
+                <span>Researching...</span>
               </>
             ) : (
               <>
@@ -120,8 +133,8 @@ export function ResearchForm({
       </div>
 
       <p className="text-center text-xs text-text-muted">
-        Press Enter to start. Breadth = parallel queries per step. Depth =
-        recursive follow-up levels.
+        Press Enter to start. The AI builds a research plan and decides how deep
+        to go based on your query.
       </p>
     </div>
   );

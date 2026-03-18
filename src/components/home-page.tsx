@@ -1,14 +1,20 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Square } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ResearchForm } from "@/components/research-form";
+import { ResearchPlan as ResearchPlanCard } from "@/components/research-plan";
 import { ResearchProgress as ResearchProgressCard } from "@/components/research-progress";
 import { ResearchReport } from "@/components/research-report";
-import type { ResearchProgress } from "@/lib/research";
+import type {
+  EffortLevel,
+  ResearchPlan,
+  ResearchProgress,
+} from "@/lib/research";
 
-type ResearchState =
+type Phase =
   | "idle"
+  | "planning"
   | "researching"
   | "generating-report"
   | "complete"
@@ -16,23 +22,22 @@ type ResearchState =
 
 interface CompletedResearch {
   report: string;
-  learnings: string[];
-  visitedUrls: string[];
   summary: {
-    totalLearnings: number;
+    totalFindings: number;
     totalSources: number;
+    coverageMap?: Record<string, string>;
   };
 }
 
 export function HomePage() {
   const [query, setQuery] = useState("");
-  const [breadth, setBreadth] = useState(4);
-  const [depth, setDepth] = useState(2);
+  const [effort, setEffort] = useState<EffortLevel>("thorough");
   const [followUpQuery, setFollowUpQuery] = useState("");
 
-  const [state, setState] = useState<ResearchState>("idle");
+  const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState<ResearchProgress | null>(null);
   const [progressLog, setProgressLog] = useState<string[]>([]);
+  const [plan, setPlan] = useState<ResearchPlan | null>(null);
   const [result, setResult] = useState<CompletedResearch | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -41,6 +46,14 @@ export function HomePage() {
     return () => {
       abortControllerRef.current?.abort();
     };
+  }, []);
+
+  const resetState = useCallback(() => {
+    setProgress(null);
+    setProgressLog([]);
+    setPlan(null);
+    setResult(null);
+    setError(null);
   }, []);
 
   const startResearch = useCallback(
@@ -52,17 +65,14 @@ export function HomePage() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      setState("researching");
-      setProgress(null);
-      setProgressLog([]);
-      setResult(null);
-      setError(null);
+      setPhase("researching");
+      resetState();
 
       try {
         const response = await fetch("/api/research", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: q, breadth, depth }),
+          body: JSON.stringify({ query: q, effort }),
           signal: controller.signal,
         });
 
@@ -91,31 +101,28 @@ export function HomePage() {
             if (!message.trim()) continue;
 
             let eventType = "message";
-            let data = "";
+            const dataLines: string[] = [];
 
             for (const line of message.split("\n")) {
               if (line.startsWith("event: ")) {
                 eventType = line.slice(7).trim();
               } else if (line.startsWith("data: ")) {
-                data = line.slice(6);
+                dataLines.push(line.slice(6));
               }
             }
 
+            const data = dataLines.join("\n");
             if (!data) continue;
 
             try {
               const parsed = JSON.parse(data);
 
               switch (eventType) {
+                case "plan":
+                  setPlan(parsed.plan);
+                  break;
                 case "progress":
                   setProgress(parsed);
-                  if (parsed.currentQuery) {
-                    setProgressLog((prev) => {
-                      const entry = `Searching: "${parsed.currentQuery}"`;
-                      if (prev[prev.length - 1] === entry) return prev;
-                      return [...prev, entry];
-                    });
-                  }
                   if (parsed.status) {
                     setProgressLog((prev) => {
                       if (prev[prev.length - 1] === parsed.status) return prev;
@@ -124,21 +131,40 @@ export function HomePage() {
                   }
                   break;
                 case "status":
-                  if (parsed.status === "generating-report") {
-                    setState("generating-report");
-                    setProgressLog((prev) => [
-                      ...prev,
-                      "Synthesizing final report...",
-                    ]);
+                  if (parsed.status === "planning") setPhase("planning");
+                  else if (parsed.status === "researching")
+                    setPhase("researching");
+                  else if (parsed.status === "generating-report")
+                    setPhase("generating-report");
+                  if (parsed.message) {
+                    setProgressLog((prev) => [...prev, parsed.message]);
                   }
+                  break;
+                case "aspect-complete":
+                  setProgressLog((prev) => [
+                    ...prev,
+                    `Completed: ${parsed.aspectId} (${parsed.findingsCount} findings, ${parsed.sourcesCount} sources)`,
+                  ]);
+                  break;
+                case "report-outline":
+                  setProgressLog((prev) => [
+                    ...prev,
+                    `Report outline: ${parsed.sections?.length ?? 0} sections`,
+                  ]);
+                  break;
+                case "report-section":
+                  setProgressLog((prev) => [
+                    ...prev,
+                    `Section written: ${parsed.sectionId}`,
+                  ]);
                   break;
                 case "complete":
                   setResult(parsed);
-                  setState("complete");
+                  setPhase("complete");
                   break;
                 case "error":
                   setError(parsed.error);
-                  setState("error");
+                  setPhase("error");
                   break;
               }
             } catch {
@@ -146,37 +172,57 @@ export function HomePage() {
             }
           }
         }
+
+        // Flush remaining decoder bytes
+        buffer += decoder.decode();
+        // If stream ended without a terminal event, surface the error
+        // (phase is still set from above — check via a ref-like read)
+        setPhase((current) => {
+          if (current !== "complete" && current !== "error") {
+            setError("Research stream ended unexpectedly. Please try again.");
+            return "error";
+          }
+          return current;
+        });
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Research failed");
-        setState("error");
+        setPhase("error");
       }
     },
-    [query, breadth, depth],
+    [query, effort, resetState],
   );
+
+  const handleCancel = useCallback(() => {
+    abortControllerRef.current?.abort();
+    setPhase("idle");
+    resetState();
+  }, [resetState]);
 
   const handleFollowUp = useCallback(() => {
     if (!followUpQuery.trim()) return;
-    setQuery(followUpQuery);
+    const q = followUpQuery;
+    setQuery(q);
     setFollowUpQuery("");
-    startResearch(followUpQuery);
+    startResearch(q);
   }, [followUpQuery, startResearch]);
 
   const handleNewResearch = useCallback(() => {
     abortControllerRef.current?.abort();
-    setState("idle");
+    setPhase("idle");
     setQuery("");
-    setProgress(null);
-    setProgressLog([]);
-    setResult(null);
-    setError(null);
-  }, []);
+    setFollowUpQuery("");
+    resetState();
+  }, [resetState]);
 
-  const isLoading = state === "researching" || state === "generating-report";
+  const isLoading =
+    phase === "planning" ||
+    phase === "researching" ||
+    phase === "generating-report";
 
   return (
     <main id="main-content" className="min-h-screen pt-16">
-      {state === "idle" ? (
+      {phase === "idle" ? (
         <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-6">
           <div className="mx-auto w-full max-w-2xl space-y-8">
             <div className="space-y-3 text-center">
@@ -184,18 +230,16 @@ export function HomePage() {
                 What do you want to research?
               </h1>
               <p className="mx-auto max-w-lg text-base text-text-secondary">
-                AI-powered recursive search that goes deeper than surface-level
-                results.
+                Deep, multi-source research on any topic — with structured
+                plans, credibility scoring, and detailed reports.
               </p>
             </div>
 
             <ResearchForm
               query={query}
               onQueryChange={setQuery}
-              breadth={breadth}
-              onBreadthChange={setBreadth}
-              depth={depth}
-              onDepthChange={setDepth}
+              effort={effort}
+              onEffortChange={setEffort}
               onSubmit={() => startResearch()}
               isLoading={false}
             />
@@ -203,19 +247,40 @@ export function HomePage() {
         </div>
       ) : (
         <div className="mx-auto max-w-4xl space-y-6 px-6 py-8">
+          {plan && <ResearchPlanCard plan={plan} isActive={isLoading} />}
+
           {isLoading && (
-            <ResearchProgressCard
-              progress={progress}
-              progressLog={progressLog}
-              isGeneratingReport={state === "generating-report"}
-              query={query}
-            />
+            <>
+              <ResearchProgressCard
+                progress={progress}
+                progressLog={progressLog}
+                isGeneratingReport={phase === "generating-report"}
+                query={query}
+              />
+
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+                >
+                  <Square className="size-3.5" />
+                  <span>Stop research</span>
+                </button>
+              </div>
+            </>
           )}
 
           {error && (
-            <div className="rounded-xl border border-error/20 bg-error/5 p-5">
+            <div
+              className="rounded-xl border border-error/20 bg-error/5 p-5"
+              role="alert"
+            >
               <div className="flex items-start gap-3">
-                <AlertCircle className="mt-0.5 size-5 shrink-0 text-error" />
+                <AlertCircle
+                  className="mt-0.5 size-5 shrink-0 text-error"
+                  aria-hidden="true"
+                />
                 <div>
                   <h2 className="mb-1 text-sm font-medium text-text-primary">
                     Research Failed
@@ -233,11 +298,11 @@ export function HomePage() {
             </div>
           )}
 
-          {result && state === "complete" && (
+          {result && phase === "complete" && (
             <>
               <ResearchReport
                 report={result.report}
-                learningsCount={result.summary.totalLearnings}
+                findingsCount={result.summary.totalFindings}
                 sourcesCount={result.summary.totalSources}
                 query={query}
               />
@@ -247,7 +312,11 @@ export function HomePage() {
                   Follow-up research
                 </h2>
                 <div className="flex gap-3">
+                  <label htmlFor="follow-up-input" className="sr-only">
+                    Follow-up question
+                  </label>
                   <input
+                    id="follow-up-input"
                     type="text"
                     value={followUpQuery}
                     onChange={(e) => setFollowUpQuery(e.target.value)}

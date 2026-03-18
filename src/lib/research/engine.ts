@@ -1,222 +1,257 @@
 import { generateText, Output } from "ai";
 import pLimit from "p-limit";
-import {
-  getLearningsPrompt,
-  getReportPrompt,
-  getSerpQueryPrompt,
-  getSystemPrompt,
-} from "./prompts";
+import { getSystemPrompt } from "./prompts";
 import { getModel } from "./providers";
-import { getConcurrencyLimit, searchWeb } from "./search";
-import { trimPrompt } from "./text-utils";
 import {
-  LearningsSchema,
-  ReportSchema,
-  type ResearchProgress,
-  type ResearchResult,
-  SerpQueriesSchema,
-  type SerpQuery,
+  addContradiction,
+  addFinding,
+  addSource,
+  addToSearchHistory,
+  createResearchState,
+  getRelevantFindings,
+  updateCoverage,
+} from "./state";
+import type {
+  Finding,
+  PlanAspect,
+  ResearchPlan,
+  ResearchProgress,
+  ResearchState,
+  SourceRecord,
 } from "./types";
+import { ContradictionCheckSchema } from "./types";
+import { executeAspect, type WorkerResult } from "./workers";
 
-async function generateSerpQueries(
-  query: string,
-  numQueries: number,
-  learnings?: string[],
-): Promise<SerpQuery[]> {
-  const { output } = await generateText({
-    model: getModel(),
-    system: getSystemPrompt(),
-    prompt: getSerpQueryPrompt(query, numQueries, learnings),
-    output: Output.object({
-      schema: SerpQueriesSchema,
-    }),
-  });
+const MAX_CONCURRENT_WORKERS = 3;
+const MAX_GAP_FILL_ROUNDS = 2;
+const MIN_FINDINGS_FOR_COMPLETE = 2;
 
-  if (!output) {
-    console.error("Failed to generate SERP queries");
-    return [];
-  }
-
-  return output.queries.slice(0, numQueries);
-}
-
-async function processSearchResults(
-  query: string,
-  contents: string[],
-  numLearnings = 3,
-  numFollowUpQuestions = 3,
-): Promise<{ learnings: string[]; followUpQuestions: string[] }> {
-  if (contents.length === 0) {
-    return { learnings: [], followUpQuestions: [] };
-  }
-
-  const trimmedContents = contents.map((c) => trimPrompt(c, 25_000));
-
-  const { output } = await generateText({
-    model: getModel(),
-    system: getSystemPrompt(),
-    prompt: getLearningsPrompt(
-      query,
-      trimmedContents,
-      numLearnings,
-      numFollowUpQuestions,
-    ),
-    output: Output.object({
-      schema: LearningsSchema,
-    }),
-    abortSignal: AbortSignal.timeout(60_000),
-  });
-
-  if (!output) {
-    console.error("Failed to process search results");
-    return { learnings: [], followUpQuestions: [] };
-  }
-
-  return output;
-}
-
-export async function deepResearch({
-  query,
-  breadth,
-  depth,
-  totalDepth,
-  learnings = [],
-  visitedUrls = [],
-  onProgress,
-}: {
+export interface OrchestrateOptions {
   query: string;
   breadth: number;
   depth: number;
-  totalDepth?: number;
-  learnings?: string[];
-  visitedUrls?: string[];
+  plan: ResearchPlan;
+  signal?: AbortSignal;
   onProgress?: (progress: ResearchProgress) => void;
-}): Promise<ResearchResult> {
-  const rootTotalDepth = totalDepth ?? depth;
-
-  const progress: ResearchProgress = {
-    currentDepth: depth,
-    totalDepth: rootTotalDepth,
-    currentBreadth: breadth,
-    totalBreadth: breadth,
-    totalQueries: 0,
-    completedQueries: 0,
-  };
-
-  const reportProgress = (update: Partial<ResearchProgress>) => {
-    Object.assign(progress, update);
-    onProgress?.(progress);
-  };
-
-  const serpQueries = await generateSerpQueries(query, breadth, learnings);
-
-  reportProgress({
-    totalQueries: serpQueries.length,
-    currentQuery: serpQueries[0]?.query,
-    status: `Researching: ${serpQueries[0]?.query || query}`,
-  });
-
-  const limit = pLimit(getConcurrencyLimit());
-
-  const results = await Promise.all(
-    serpQueries.map((serpQuery) =>
-      limit(async () => {
-        try {
-          const searchResults = await searchWeb(serpQuery.query, {
-            limit: 5,
-            timeout: 15000,
-            scrapeContent: true,
-          });
-
-          const newUrls = searchResults.map((r) => r.url).filter((url) => url);
-          const contents = searchResults
-            .map((r) => r.markdown)
-            .filter((c): c is string => !!c);
-
-          const newBreadth = Math.ceil(breadth / 2);
-          const newDepth = depth - 1;
-
-          const processed = await processSearchResults(
-            serpQuery.query,
-            contents,
-            3,
-            newBreadth,
-          );
-
-          const allLearnings = [...learnings, ...processed.learnings];
-          const allUrls = [...visitedUrls, ...newUrls];
-
-          if (newDepth > 0) {
-            reportProgress({
-              currentDepth: newDepth,
-              currentBreadth: newBreadth,
-              completedQueries: progress.completedQueries + 1,
-              currentQuery: serpQuery.query,
-              status: `Going deeper: ${processed.followUpQuestions[0] || serpQuery.query}`,
-            });
-
-            const nextQuery = `
-Previous research goal: ${serpQuery.researchGoal}
-Follow-up research directions: ${processed.followUpQuestions.map((q) => `\n- ${q}`).join("")}
-            `.trim();
-
-            return deepResearch({
-              query: nextQuery,
-              breadth: newBreadth,
-              depth: newDepth,
-              totalDepth: rootTotalDepth,
-              learnings: allLearnings,
-              visitedUrls: allUrls,
-              onProgress,
-            });
-          }
-
-          reportProgress({
-            currentDepth: 0,
-            completedQueries: progress.completedQueries + 1,
-            currentQuery: serpQuery.query,
-            status: "Completing research branch",
-          });
-
-          return {
-            learnings: allLearnings,
-            visitedUrls: allUrls,
-          };
-        } catch (error) {
-          console.error(
-            `Research error for "${serpQuery.query}":`,
-            error instanceof Error ? error.message : error,
-          );
-          return { learnings: [], visitedUrls: [] };
-        }
-      }),
-    ),
-  );
-
-  return {
-    learnings: [...new Set(results.flatMap((r) => r.learnings))],
-    visitedUrls: [...new Set(results.flatMap((r) => r.visitedUrls))],
-  };
+  onFinding?: (finding: Finding) => void;
+  onSource?: (source: SourceRecord) => void;
+  onAspectComplete?: (aspectId: string, result: WorkerResult) => void;
 }
 
-export async function generateReport(
-  query: string,
-  learnings: string[],
-  visitedUrls: string[],
-): Promise<string> {
-  const { output } = await generateText({
-    model: getModel(),
-    system: getSystemPrompt(),
-    prompt: trimPrompt(getReportPrompt(query, learnings)),
-    output: Output.object({
-      schema: ReportSchema,
-    }),
-  });
+export async function orchestrate({
+  query,
+  breadth,
+  depth,
+  plan,
+  signal,
+  onProgress,
+  onFinding,
+  onSource,
+  onAspectComplete,
+}: OrchestrateOptions): Promise<ResearchState> {
+  let state = createResearchState(query, plan);
+  const limit = pLimit(MAX_CONCURRENT_WORKERS);
+  let aspectsComplete = 0;
+  let currentAspectName: string | undefined;
 
-  if (!output) {
-    return "# Research Report\n\nFailed to generate report.";
+  const emitProgress = (status: string) => {
+    onProgress?.({
+      totalQueries: plan.estimatedSearches,
+      completedQueries: aspectsComplete,
+      currentAspect: currentAspectName,
+      aspectsComplete,
+      aspectsTotal: plan.aspects.length,
+      findingsCount: state.findings.length,
+      sourcesAssessed: state.sources.size,
+      status,
+    });
+  };
+
+  emitProgress("Starting research");
+
+  const workerTasks = plan.aspects.map((aspect) =>
+    limit(async () => {
+      signal?.throwIfAborted();
+
+      currentAspectName = aspect.topic;
+      emitProgress(`Exploring: ${aspect.topic}`);
+
+      return {
+        aspect,
+        result: await executeAspect(aspect, structuredClone(state), {
+          maxDepth: depth,
+          breadth,
+          signal,
+          onFinding,
+          onSource,
+          onProgress: (status) => emitProgress(status),
+        }),
+      };
+    }),
+  );
+
+  const settled = await Promise.allSettled(workerTasks);
+
+  for (const outcome of settled) {
+    if (outcome.status !== "fulfilled") continue;
+    const { aspect, result } = outcome.value;
+    state = mergeWorkerResult(state, aspect, result);
+    aspectsComplete++;
+    onAspectComplete?.(aspect.id, result);
+    emitProgress(
+      `Done with ${aspect.topic} — ${result.findings.length} findings`,
+    );
   }
 
-  const sourcesSection = `\n\n## Sources\n\n${visitedUrls.map((url) => `- ${url}`).join("\n")}`;
-  return output.reportMarkdown + sourcesSection;
+  for (let round = 0; round < MAX_GAP_FILL_ROUNDS; round++) {
+    signal?.throwIfAborted();
+
+    const gaps = findGaps(state);
+    if (gaps.length === 0) break;
+
+    emitProgress(
+      `Filling gaps — ${gaps.length} area${gaps.length > 1 ? "s" : ""} need more depth`,
+    );
+
+    const gapTasks = gaps.map((aspect) =>
+      limit(async () => {
+        signal?.throwIfAborted();
+
+        currentAspectName = aspect.topic;
+        emitProgress(`Going deeper on ${aspect.topic}`);
+
+        return {
+          aspect,
+          result: await executeAspect(aspect, structuredClone(state), {
+            maxDepth: Math.max(1, depth - 1),
+            breadth: Math.ceil(breadth / 2),
+            signal,
+            onFinding,
+            onSource,
+            onProgress: (status) => emitProgress(status),
+          }),
+        };
+      }),
+    );
+
+    const gapSettled = await Promise.allSettled(gapTasks);
+
+    for (const outcome of gapSettled) {
+      if (outcome.status !== "fulfilled") continue;
+      const { aspect, result } = outcome.value;
+      state = mergeWorkerResult(state, aspect, result);
+      onAspectComplete?.(aspect.id, result);
+    }
+  }
+
+  state = await detectContradictions(state, signal);
+
+  emitProgress(
+    `Found ${state.findings.length} findings across ${state.sources.size} sources`,
+  );
+
+  return state;
+}
+
+function mergeWorkerResult(
+  state: ResearchState,
+  aspect: PlanAspect,
+  result: WorkerResult,
+): ResearchState {
+  let s = state;
+
+  for (const finding of result.findings) {
+    s = addFinding(s, finding);
+  }
+
+  for (const source of result.sources) {
+    s = addSource(s, source);
+  }
+
+  for (const query of result.queriesExecuted) {
+    s = addToSearchHistory(s, query);
+  }
+
+  const aspectFindings = getRelevantFindings(s, aspect.id);
+  const coverage: "complete" | "partial" | "missing" =
+    aspectFindings.length >= MIN_FINDINGS_FOR_COMPLETE
+      ? "complete"
+      : aspectFindings.length > 0
+        ? "partial"
+        : "missing";
+
+  s = updateCoverage(s, aspect.id, coverage);
+
+  return s;
+}
+
+function findGaps(state: ResearchState): PlanAspect[] {
+  return state.plan.aspects.filter((aspect) => {
+    const status = state.coverageMap.get(aspect.id);
+    return status === "missing";
+  });
+}
+
+async function detectContradictions(
+  state: ResearchState,
+  signal?: AbortSignal,
+): Promise<ResearchState> {
+  if (state.findings.length < 2) return state;
+
+  const aspectGroups = new Map<string, Finding[]>();
+  for (const f of state.findings) {
+    const group = aspectGroups.get(f.aspect) ?? [];
+    group.push(f);
+    aspectGroups.set(f.aspect, group);
+  }
+
+  let s = state;
+
+  for (const [aspectId, findings] of aspectGroups) {
+    if (findings.length < 2) continue;
+
+    const claimsList = findings.map((f, i) => `[${i}] ${f.claim}`).join("\n");
+
+    try {
+      const { output } = await generateText({
+        model: getModel("fast"),
+        system: getSystemPrompt(),
+        prompt: `Review the following research findings from the same topic area and identify any contradictions — pairs of claims that assert conflicting or incompatible things.
+
+<findings>
+${claimsList}
+</findings>
+
+Only flag genuine factual contradictions, not complementary findings or findings about different sub-topics. Return an empty array if there are no contradictions.`,
+        output: Output.object({ schema: ContradictionCheckSchema }),
+        abortSignal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+          : AbortSignal.timeout(30_000),
+      });
+
+      if (output?.contradictions) {
+        for (const c of output.contradictions) {
+          const findingA = findings.find((f) => f.claim === c.claimA);
+          const findingB = findings.find((f) => f.claim === c.claimB);
+          s = addContradiction(s, {
+            topic: c.topic || aspectId,
+            positions: [
+              {
+                claim: c.claimA,
+                sourceUrls: findingA?.sourceUrls ?? [],
+              },
+              {
+                claim: c.claimB,
+                sourceUrls: findingB?.sourceUrls ?? [],
+              },
+            ],
+          });
+        }
+      }
+    } catch {
+      // Non-critical — skip contradiction detection on failure
+    }
+  }
+
+  return s;
 }

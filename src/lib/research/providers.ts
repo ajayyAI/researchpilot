@@ -3,14 +3,22 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
 
+export type ModelTier = "fast" | "smart" | "strategic";
+
 type Provider = "openai" | "groq" | "openrouter";
 
 const VALID_PROVIDERS = new Set<string>(["openai", "groq", "openrouter"]);
 
 const DEFAULT_MODELS: Record<Provider, string> = {
-  openai: "gpt-4o",
+  openai: "gpt-4.1",
   groq: "meta-llama/llama-4-scout-17b-16e-instruct",
-  openrouter: "meta-llama/llama-3.3-70b-instruct:free",
+  openrouter: "google/gemini-2.5-flash:free",
+};
+
+const TIER_ENV_VARS: Record<ModelTier, string> = {
+  fast: "AI_MODEL_FAST",
+  smart: "AI_MODEL",
+  strategic: "AI_MODEL_STRATEGIC",
 };
 
 let _openai: ReturnType<typeof createOpenAI> | null = null;
@@ -66,9 +74,23 @@ function getProvider(): Provider {
   return raw as Provider;
 }
 
-export function getModel(): LanguageModel {
+function getModelIdForTier(tier: ModelTier, provider: Provider): string {
+  const tierEnvVar = TIER_ENV_VARS[tier];
+  const tierModel = process.env[tierEnvVar];
+
+  if (tierModel) return tierModel;
+
+  // For non-smart tiers, fall back to AI_MODEL before the provider default
+  if (tier !== "smart" && process.env.AI_MODEL) {
+    return process.env.AI_MODEL;
+  }
+
+  return DEFAULT_MODELS[provider];
+}
+
+export function getModel(tier?: ModelTier): LanguageModel {
   const provider = getProvider();
-  const modelId = process.env.AI_MODEL || DEFAULT_MODELS[provider];
+  const modelId = getModelIdForTier(tier ?? "smart", provider);
 
   switch (provider) {
     case "groq":
@@ -78,9 +100,4 @@ export function getModel(): LanguageModel {
     default:
       return getOpenAI()(modelId);
   }
-}
-
-export function getModelId(): string {
-  const provider = getProvider();
-  return process.env.AI_MODEL || DEFAULT_MODELS[provider];
 }

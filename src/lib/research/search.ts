@@ -1,4 +1,5 @@
 import Firecrawl, { type SearchData } from "@mendable/firecrawl-js";
+import { type TavilyClient, tavily } from "@tavily/core";
 
 import type { SearchResult } from "./types";
 
@@ -17,10 +18,49 @@ function getFirecrawl(): Firecrawl {
   return firecrawlClient;
 }
 
+let tavilyClient: TavilyClient | null = null;
+
+function getTavily(): TavilyClient | null {
+  if (tavilyClient) return tavilyClient;
+  const apiKey = process.env.TAVILY_API_KEY;
+  if (!apiKey) return null;
+  tavilyClient = tavily({ apiKey });
+  return tavilyClient;
+}
+
 const concurrencyLimit = Number(process.env.FIRECRAWL_CONCURRENCY) || 2;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("utm_source");
+    u.searchParams.delete("utm_medium");
+    u.searchParams.delete("utm_campaign");
+    const path = u.pathname.replace(/\/+$/, "") || "/";
+    const host = u.hostname.replace(/^www\./, "");
+    return `${u.protocol}//${host}${path}${u.search}`;
+  } catch {
+    return url;
+  }
+}
+
+function deduplicateResults(results: SearchResult[]): SearchResult[] {
+  const seen = new Map<string, SearchResult>();
+  for (const result of results) {
+    const key = normalizeUrl(result.url);
+    const existing = seen.get(key);
+    if (
+      !existing ||
+      (result.markdown?.length ?? 0) > (existing.markdown?.length ?? 0)
+    ) {
+      seen.set(key, result);
+    }
+  }
+  return Array.from(seen.values());
 }
 
 export async function searchWeb(
@@ -88,6 +128,69 @@ export async function searchWeb(
 
   console.error(`Search failed after ${maxRetries} retries for "${query}"`);
   return [];
+}
+
+async function searchTavily(
+  query: string,
+  options?: { limit?: number },
+): Promise<SearchResult[]> {
+  const client = getTavily();
+  if (!client) return [];
+
+  const searchDepth =
+    (process.env.TAVILY_SEARCH_DEPTH as "basic" | "advanced") || "basic";
+  const maxResults = options?.limit ?? 5;
+
+  try {
+    const response = await client.search(query, {
+      searchDepth,
+      maxResults,
+    });
+
+    return response.results.map((item) => ({
+      url: item.url,
+      title: item.title,
+      description: item.content,
+      markdown: item.content,
+    }));
+  } catch (error) {
+    console.error(
+      `Tavily search error for "${query}":`,
+      error instanceof Error ? error.message : String(error),
+    );
+    return [];
+  }
+}
+
+export async function multiSearch(
+  query: string,
+  options?: { limit?: number; timeout?: number; scrapeContent?: boolean },
+): Promise<SearchResult[]> {
+  const tavilyAvailable = getTavily() !== null;
+
+  if (!tavilyAvailable) {
+    return searchWeb(query, options);
+  }
+
+  const [firecrawlResult, tavilyResult] = await Promise.allSettled([
+    searchWeb(query, options),
+    searchTavily(query, { limit: options?.limit }),
+  ]);
+
+  const firecrawlResults =
+    firecrawlResult.status === "fulfilled" ? firecrawlResult.value : [];
+  const tavilyResults =
+    tavilyResult.status === "fulfilled" ? tavilyResult.value : [];
+
+  if (firecrawlResult.status === "rejected") {
+    console.error("Firecrawl failed in multiSearch:", firecrawlResult.reason);
+  }
+  if (tavilyResult.status === "rejected") {
+    console.error("Tavily failed in multiSearch:", tavilyResult.reason);
+  }
+
+  const combined = [...firecrawlResults, ...tavilyResults];
+  return deduplicateResults(combined);
 }
 
 export function getConcurrencyLimit(): number {

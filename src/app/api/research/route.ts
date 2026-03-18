@@ -1,10 +1,17 @@
 import { z } from "zod";
-import { deepResearch, generateReport } from "@/lib/research";
+import {
+  createFallbackPlan,
+  EFFORT_DEFAULTS,
+  generateReport,
+  generateResearchPlan,
+  orchestrate,
+  type ResearchPlan,
+  serializeState,
+} from "@/lib/research";
 
 const ResearchRequestSchema = z.object({
   query: z.string().trim().min(1).max(2000),
-  breadth: z.coerce.number().int().min(1).max(10).default(4),
-  depth: z.coerce.number().int().min(1).max(5).default(2),
+  effort: z.enum(["quick", "thorough", "deep"]).default("thorough"),
 });
 
 export const runtime = "nodejs";
@@ -20,13 +27,14 @@ export async function POST(request: Request) {
       return Response.json(
         {
           error:
-            "Invalid request. Provide a non-empty query plus breadth and depth values within the supported ranges.",
+            "Invalid request. Provide a non-empty query (max 2000 chars) and an optional effort level.",
         },
         { status: 400 },
       );
     }
 
-    const { query, breadth, depth } = parsedBody.data;
+    const { query, effort } = parsedBody.data;
+    const { breadth, depth } = EFFORT_DEFAULTS[effort];
 
     const encoder = new TextEncoder();
 
@@ -48,37 +56,69 @@ export async function POST(request: Request) {
 
         try {
           sendEvent("status", {
-            status: "starting",
-            message: "Starting deep research...",
+            status: "planning",
+            message: "Building research plan...",
           });
 
-          const result = await deepResearch({
+          let plan: ResearchPlan;
+          try {
+            plan = await generateResearchPlan(query);
+          } catch {
+            plan = createFallbackPlan(query);
+          }
+
+          sendEvent("plan", { plan });
+
+          sendEvent("status", {
+            status: "researching",
+            message: `Researching ${plan.aspects.length} areas...`,
+          });
+
+          const state = await orchestrate({
             query,
             breadth,
             depth,
+            plan,
+            signal: request.signal,
             onProgress: (progress) => {
               sendEvent("progress", progress);
             },
+            onFinding: (finding) => {
+              sendEvent("finding", finding);
+            },
+            onSource: (source) => {
+              sendEvent("source", source);
+            },
+            onAspectComplete: (aspectId, result) => {
+              sendEvent("aspect-complete", {
+                aspectId,
+                findingsCount: result.findings.length,
+                sourcesCount: result.sources.length,
+              });
+            },
           });
 
-          sendEvent("status", {
-            status: "generating-report",
-            message: `Generating report from ${result.learnings.length} learnings...`,
-          });
+          const serialized = serializeState(state);
 
-          const report = await generateReport(
-            query,
-            result.learnings,
-            result.visitedUrls,
-          );
+          const report = await generateReport(state, {
+            signal: request.signal,
+            onStatus: (status) =>
+              sendEvent("status", {
+                status: "generating-report",
+                message: status,
+              }),
+            onOutline: (outline) => sendEvent("report-outline", outline),
+            onSection: (sectionId, markdown) =>
+              sendEvent("report-section", { sectionId, markdown }),
+          });
 
           sendEvent("complete", {
             report,
-            learnings: result.learnings,
-            visitedUrls: result.visitedUrls,
+            state: serialized,
             summary: {
-              totalLearnings: result.learnings.length,
-              totalSources: result.visitedUrls.length,
+              totalFindings: state.findings.length,
+              totalSources: state.sources.size,
+              coverageMap: Object.fromEntries(state.coverageMap),
             },
           });
 

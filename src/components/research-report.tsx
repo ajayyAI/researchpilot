@@ -1,30 +1,38 @@
 "use client";
 
 import { Check, Copy, Download, ExternalLink, FileText } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 
 interface ResearchReportProps {
   report: string;
-  learningsCount: number;
+  findingsCount: number;
   sourcesCount: number;
   query: string;
 }
 
 export function ResearchReport({
   report,
-  learningsCount,
+  findingsCount,
   sourcesCount,
   query,
 }: ResearchReportProps) {
   const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
 
   const copyToClipboard = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(report);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       // Clipboard API unavailable
     }
@@ -47,7 +55,10 @@ export function ResearchReport({
   }, [report, query]);
 
   return (
-    <div className="surface rounded-xl overflow-hidden">
+    <article
+      className="surface rounded-xl overflow-hidden"
+      aria-label="Research report"
+    >
       <div className="bg-bg-elevated/50 border-b border-border px-5 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="size-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
@@ -58,8 +69,8 @@ export function ResearchReport({
               Research Report
             </h3>
             <div className="flex gap-2 text-xs text-text-muted mt-0.5">
-              <span>{learningsCount} findings</span>
-              <span>|</span>
+              <span>{findingsCount} findings</span>
+              <span aria-hidden="true">|</span>
               <span>{sourcesCount} sources</span>
             </div>
           </div>
@@ -71,11 +82,19 @@ export function ResearchReport({
             size="sm"
             onClick={downloadMarkdown}
             className="text-text-muted"
+            aria-label="Download as markdown"
           >
             <Download className="size-3.5" />
             <span className="hidden sm:inline">.md</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={copyToClipboard}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={copyToClipboard}
+            aria-label={
+              copied ? "Copied to clipboard" : "Copy report to clipboard"
+            }
+          >
             {copied ? (
               <>
                 <Check className="size-3.5 text-success" />
@@ -93,7 +112,7 @@ export function ResearchReport({
 
       <div className="p-5 md:p-8">
         <div
-          className="prose prose-invert prose-sm max-w-none
+          className="prose prose-sm max-w-none dark:prose-invert
             prose-headings:text-text-primary prose-headings:font-semibold prose-headings:tracking-tight
             prose-p:text-text-secondary prose-p:leading-relaxed
             prose-a:text-accent prose-a:no-underline hover:prose-a:underline
@@ -116,7 +135,7 @@ export function ResearchReport({
                     className="inline-flex items-center gap-1 text-accent hover:text-accent/80 transition-colors"
                   >
                     {children}
-                    <ExternalLink className="size-3" />
+                    <ExternalLink className="size-3" aria-hidden="true" />
                   </a>
                 );
               },
@@ -126,6 +145,6 @@ export function ResearchReport({
           </ReactMarkdown>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
