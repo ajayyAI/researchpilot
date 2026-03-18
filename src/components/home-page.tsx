@@ -6,7 +6,6 @@ import { ResearchForm } from "@/components/research-form";
 import { ResearchProgress as ResearchProgressCard } from "@/components/research-progress";
 import { ResearchReport } from "@/components/research-report";
 import type { ResearchProgress } from "@/lib/research";
-import { siteConfig } from "@/lib/site-config";
 
 type ResearchState =
   | "idle"
@@ -187,18 +186,6 @@ export function HomePage() {
               <p className="mx-auto max-w-lg text-base text-text-secondary">
                 AI-powered recursive search that goes deeper than surface-level
                 results.
-              </p>
-              <p className="text-sm text-text-muted">
-                Open source on{" "}
-                <a
-                  href={siteConfig.githubUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-accent underline-offset-4 transition-colors hover:text-accent/80 hover:underline"
-                >
-                  GitHub
-                </a>
-                .
               </p>
             </div>
 
