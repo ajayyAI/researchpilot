@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Square } from "lucide-react";
+import { AlertCircle, Layers, Scale, Shield, Square } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiKeyDialog } from "@/components/api-key-dialog";
 import { Header } from "@/components/layout/Header";
@@ -309,6 +309,37 @@ export function HomePage() {
                 onSubmit={() => startResearch()}
                 isLoading={false}
               />
+
+              {/* Bento feature grid */}
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                <div className="col-span-2 rounded-xl border border-border bg-bg-surface/40 p-4 sm:col-span-1">
+                  <Layers className="mb-2.5 size-4 text-accent" />
+                  <p className="text-[13px] font-medium text-text-primary">
+                    Multi-source search
+                  </p>
+                  <p className="mt-1 text-xs text-text-muted">
+                    Parallel queries across providers with deduplication
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border bg-bg-surface/40 p-4">
+                  <Shield className="mb-2.5 size-4 text-accent" />
+                  <p className="text-[13px] font-medium text-text-primary">
+                    Source scoring
+                  </p>
+                  <p className="mt-1 text-xs text-text-muted">
+                    Credibility rated per source
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border bg-bg-surface/40 p-4">
+                  <Scale className="mb-2.5 size-4 text-accent" />
+                  <p className="text-[13px] font-medium text-text-primary">
+                    Contradiction detection
+                  </p>
+                  <p className="mt-1 text-xs text-text-muted">
+                    Flags conflicting claims
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
