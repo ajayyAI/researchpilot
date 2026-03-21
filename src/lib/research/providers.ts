@@ -2,6 +2,7 @@ import { createGroq } from "@ai-sdk/groq";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModel } from "ai";
+import { getRequestKeys } from "./request-context";
 import { Throttle } from "./throttle";
 
 export type ModelTier = "fast" | "smart" | "strategic";
@@ -54,9 +55,23 @@ const API_KEY_CONFIG: Record<
   },
 };
 
+const PROVIDER_FACTORY: Record<
+  Provider,
+  typeof createOpenAI | typeof createGroq | typeof createOpenRouter
+> = {
+  openai: createOpenAI,
+  groq: createGroq,
+  openrouter: createOpenRouter,
+};
+
 const providerCache = new Map<Provider, ReturnType<typeof createOpenAI>>();
 
 function getProviderClient(provider: Provider) {
+  const requestKeys = getRequestKeys();
+  if (requestKeys) {
+    return PROVIDER_FACTORY[provider]({ apiKey: requestKeys.providerKey });
+  }
+
   const cached = providerCache.get(provider);
   if (cached) return cached;
 
@@ -68,17 +83,15 @@ function getProviderClient(provider: Provider) {
     );
   }
 
-  const factory = {
-    openai: createOpenAI,
-    groq: createGroq,
-    openrouter: createOpenRouter,
-  };
-  const client = factory[provider]({ apiKey });
+  const client = PROVIDER_FACTORY[provider]({ apiKey });
   providerCache.set(provider, client as ReturnType<typeof createOpenAI>);
   return client;
 }
 
 function getProvider(): Provider {
+  const requestKeys = getRequestKeys();
+  if (requestKeys) return requestKeys.provider;
+
   const raw = process.env.AI_PROVIDER || "openai";
   if (!VALID_PROVIDERS.has(raw)) {
     throw new Error(
@@ -110,6 +123,7 @@ const freeTierThrottle = new Throttle(
 );
 
 function isFreeTier(tier: ModelTier): boolean {
+  if (getRequestKeys()) return false;
   const provider = getProvider();
   if (provider !== "openrouter") return false;
   return getModelIdForTier(tier, provider).endsWith(":free");

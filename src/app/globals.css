@@ -85,3 +85,14 @@
     @apply outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary;
   }
 }
+
+@layer base {
+  .dialog-overlay {
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+  }
+
+  .dialog-content {
+    opacity: 1;
+  }
+}

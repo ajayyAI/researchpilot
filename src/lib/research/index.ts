@@ -7,6 +7,8 @@ export { computeInformationGain, GAIN_HIGH, GAIN_NORMAL } from "./gain";
 export { createFallbackPlan, generateResearchPlan } from "./planner";
 export { getModel, throttledGenerate } from "./providers";
 export { generateReport } from "./report-pipeline";
+export type { RequestKeys } from "./request-context";
+export { runWithKeys } from "./request-context";
 export { multiSearch, searchWeb } from "./search";
 export type { SerializedResearchState } from "./state";
 export {

@@ -1,11 +1,17 @@
 import Firecrawl, { type SearchData } from "@mendable/firecrawl-js";
 import { type TavilyClient, tavily } from "@tavily/core";
 
+import { getRequestKeys } from "./request-context";
 import type { SearchResult } from "./types";
 
 let firecrawlClient: Firecrawl | null = null;
 
 function getFirecrawl(): Firecrawl {
+  const requestKeys = getRequestKeys();
+  if (requestKeys) {
+    return new Firecrawl({ apiKey: requestKeys.firecrawlKey });
+  }
+
   if (!firecrawlClient) {
     const apiKey = process.env.FIRECRAWL_API_KEY;
     if (!apiKey) {
@@ -21,6 +27,11 @@ function getFirecrawl(): Firecrawl {
 let tavilyClient: TavilyClient | null = null;
 
 function getTavily(): TavilyClient | null {
+  const requestKeys = getRequestKeys();
+  if (requestKeys?.tavilyKey) {
+    return tavily({ apiKey: requestKeys.tavilyKey });
+  }
+
   if (tavilyClient) return tavilyClient;
   const apiKey = process.env.TAVILY_API_KEY;
   if (!apiKey) return null;

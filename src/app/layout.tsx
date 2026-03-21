@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Header } from "@/components/layout/Header";
 import { getSiteUrl, siteConfig } from "@/lib/site-config";
 import { dmSans, spaceGrotesk } from "./fonts";
 import "./globals.css";
@@ -82,11 +81,10 @@ export default function RootLayout({
       >
         <a
           href="#main-content"
-          className="focus-ring sr-only fixed left-4 top-4 z-[60] rounded-md bg-bg-elevated px-3 py-2 text-sm text-text-primary focus:not-sr-only"
+          className="focus-ring sr-only fixed left-4 top-4 z-60 rounded-md bg-bg-elevated px-3 py-2 text-sm text-text-primary focus:not-sr-only"
         >
           Skip to content
         </a>
-        <Header />
         {children}
       </body>
     </html>

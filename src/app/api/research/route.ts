@@ -8,10 +8,19 @@ import {
   type ResearchPlan,
   serializeState,
 } from "@/lib/research";
+import { type RequestKeys, runWithKeys } from "@/lib/research/request-context";
+
+const ApiKeysSchema = z.object({
+  provider: z.enum(["openai", "groq", "openrouter"]),
+  providerKey: z.string().min(1),
+  firecrawlKey: z.string().min(1),
+  tavilyKey: z.string().optional(),
+});
 
 const ResearchRequestSchema = z.object({
   query: z.string().trim().min(1).max(2000),
   effort: z.enum(["quick", "thorough", "deep"]).default("thorough"),
+  apiKeys: ApiKeysSchema.optional(),
 });
 
 export const runtime = "nodejs";
@@ -33,7 +42,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { query, effort } = parsedBody.data;
+    const { query, effort, apiKeys } = parsedBody.data;
     const { breadth, depth } = EFFORT_DEFAULTS[effort];
 
     const encoder = new TextEncoder();
@@ -58,7 +67,7 @@ export async function POST(request: Request) {
           }
         };
 
-        try {
+        const runPipeline = async () => {
           sendEvent("status", {
             status: "planning",
             message: "Building research plan...",
@@ -125,19 +134,38 @@ export async function POST(request: Request) {
               coverageMap: Object.fromEntries(state.coverageMap),
             },
           });
+        };
+
+        try {
+          if (apiKeys) {
+            await runWithKeys(apiKeys as RequestKeys, runPipeline);
+          } else {
+            await runPipeline();
+          }
 
           closeStream();
         } catch (error) {
           if (!request.signal.aborted) {
             console.error("Research error:", error);
 
-            const message =
+            const isAuthError =
               error instanceof Error &&
-              /(_API_KEY|AI_PROVIDER|AI_MODEL|FIRECRAWL)/.test(error.message)
+              /401|403|unauthorized|invalid.*key/i.test(error.message);
+
+            const isConfigError =
+              error instanceof Error &&
+              /(_API_KEY|AI_PROVIDER|AI_MODEL|FIRECRAWL)/.test(error.message);
+
+            const message = isAuthError
+              ? "Invalid API key. Please check your keys in settings."
+              : isConfigError
                 ? "Research is not configured correctly. Check the required API keys and provider settings."
                 : "Research failed. Please try again.";
 
-            sendEvent("error", { error: message });
+            sendEvent("error", {
+              error: message,
+              isAuthError: isAuthError || isConfigError,
+            });
           }
 
           closeStream();
